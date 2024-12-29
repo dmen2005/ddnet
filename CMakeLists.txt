@@ -40,7 +40,7 @@ else()
   set(TARGET_BITS "64")
 endif()
 
-if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "arm"
+if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "arm" 
   OR "${CMAKE_SYSTEM_PROCESSOR}" MATCHES "aarch64"
   OR "${CMAKE_SYSTEM_PROCESSOR}" MATCHES "ARM64")
   if(TARGET_BITS STREQUAL "32")
@@ -58,7 +58,7 @@ endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   set(TARGET_OS "windows")
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
   set(TARGET_OS "linux")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   set(TARGET_OS "mac")
@@ -66,8 +66,6 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Haiku")
   set(TARGET_OS "haiku")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Android")
   set(TARGET_OS "android")
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
-  set(TARGET_OS "emscripten")
 endif()
 
 include(CheckCCompilerFlag)
@@ -76,7 +74,7 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.18)
   include(CheckLinkerFlag)
 endif()
 include(CheckSymbolExists)
-if(NOT (TARGET_OS STREQUAL "emscripten"))
+if(NOT (CMAKE_SYSTEM_NAME STREQUAL "Emscripten"))
   include(CheckAtomic)
 endif()
 
@@ -119,12 +117,12 @@ option(PREFER_BUNDLED_LIBS "Prefer bundled libraries over system libraries" ${AU
 option(DEV "Don't generate stuff necessary for packaging" OFF)
 option(VULKAN "Enable the vulkan backend" ${AUTO_VULKAN_BACKEND})
 
-option(EXCEPTION_HANDLING "Enable crashdumps (only works with Windows)" OFF)
+option(EXCEPTION_HANDLING "Enable exception handling (only works with Windows as of now)" OFF)
 option(IPO "Enable interprocedural optimizations" OFF)
 option(FUSE_LD "Linker to use" OFF)
 option(SECURITY_COMPILER_FLAGS "Whether to set security-relevant compiler flags like -D_FORTIFY_SOURCE=2 and -fstack-protector-strong" ON)
 
-if(TARGET_OS STREQUAL "emscripten")
+if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
   include(${PROJECT_SOURCE_DIR}/cmake/toolchains/Emscripten.toolchain)
 endif()
 
@@ -310,6 +308,7 @@ if(NOT MSVC AND NOT HAIKU)
   endif()
 
   if(EXCEPTION_HANDLING)
+    add_cxx_compiler_flag_if_supported(OUR_FLAGS -DCONF_EXCEPTION_HANDLING)
     # use the frame pointer (frame pointer usage is disabled by default in
     # some architectures like x86_64 and for some optimization levels; and it
     # may be impossible to walk the call stack without it)
@@ -343,6 +342,12 @@ if(NOT MSVC AND NOT HAIKU)
   # add_cxx_compiler_flag_if_supported(OUR_FLAGS_OWN -Wdouble-promotion) # Many occurrences
   # add_cxx_compiler_flag_if_supported(OUR_FLAGS_OWN -Wnull-dereference) # Many occurrences
   # add_cxx_compiler_flag_if_supported(OUR_FLAGS_OWN -Wuseless-cast) # TODO: Enable for C++ code except gtest
+endif()
+
+if(MSVC)
+  if(EXCEPTION_HANDLING)
+  add_cxx_compiler_flag_if_supported(OUR_FLAGS /DCONF_EXCEPTION_HANDLING)
+  endif()
 endif()
 
 if(NOT MSVC AND NOT HAIKU AND SECURITY_COMPILER_FLAGS)
@@ -428,7 +433,7 @@ endif()
 
 if(FAT)
   set(LIB_DIR "${TARGET_OS}/libfat")
-elseif(TARGET_OS STREQUAL "emscripten")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
   set(LIB_DIR "webasm/libwasm")
 elseif(TARGET_CPU_ARCHITECTURE STREQUAL "arm" OR TARGET_CPU_ARCHITECTURE STREQUAL "arm64")
   set(LIB_DIR "${TARGET_OS}/lib${TARGET_CPU_ARCHITECTURE}")
@@ -457,7 +462,7 @@ function(set_extra_dirs_include VARIABLE NAME LIBRARY)
   is_bundled(IS_BUNDLED "${LIBRARY}")
   if(IS_BUNDLED)
     set(TMP_TARGET_OS ${TARGET_OS})
-    if(TARGET_OS STREQUAL "emscripten")
+    if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
      set(TMP_TARGET_OS webasm)
     endif()
     set("HINTS_${VARIABLE}_INCLUDEDIR" "ddnet-libs/${NAME}/include" "ddnet-libs/${NAME}/include/${TMP_TARGET_OS}" PARENT_SCOPE)
@@ -465,7 +470,7 @@ function(set_extra_dirs_include VARIABLE NAME LIBRARY)
 endfunction()
 
 if(CMAKE_CROSSCOMPILING)
-  if(TARGET_OS STREQUAL "android" OR TARGET_OS STREQUAL "emscripten")
+  if(TARGET_OS STREQUAL "android" OR CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
     # be more aggressive with android toolchain
     set(CROSSCOMPILING_NO_CMAKE_SYSTEM_PATH NO_CMAKE_SYSTEM_PATH NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)
   else()
@@ -543,7 +548,7 @@ else()
 endif()
 
 if(EXCEPTION_HANDLING)
-  find_package(Crashdump)
+  find_package(ExceptionHandling)
 endif()
 
 if(SECURITY_COMPILER_FLAGS)
@@ -738,15 +743,6 @@ elseif(TARGET_OS STREQUAL "android")
     set(PLATFORM_LIBS ${TW_ANDROID_LIBS})
     set(PLATFORM_CLIENT_LIBS ${TW_ANDROID_LIBS_CLIENT})
     set(PLATFORM_CLIENT_INCLUDE_DIRS)
-elseif(TARGET_OS STREQUAL "emscripten")
-  find_package(OpenGL)
-  set(PLATFORM_CLIENT_LIBS GL)
-  set(PLATFORM_CLIENT_INCLUDE_DIRS "")
-  set(CMAKE_EXECUTABLE_SUFFIX ".html")
-  set(PLATFORM_CLIENT)
-  set(PLATFORM_LIBS)
-  list(APPEND PLATFORM_LIBS rt) # clock_gettime for glibc < 2.17
-  list(APPEND PLATFORM_LIBS dl) # for Rust
 else()
   find_package(Notify)
   find_package(OpenGL)
@@ -760,6 +756,12 @@ else()
   else()
     set(PLATFORM_LIBS)
   endif()
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+  set(PLATFORM_CLIENT_LIBS GL)
+  set(PLATFORM_CLIENT_INCLUDE_DIRS "")
+  set(CMAKE_EXECUTABLE_SUFFIX ".html")
 endif()
 
 ########################################################################
@@ -862,7 +864,6 @@ set_src(RUST_BRIDGE_SHARED GLOB_RECURSE src/rust-bridge
 
 set_glob(RUST_MASTERSRV GLOB "rs;toml" src/mastersrv/src
   addr.rs
-  config.rs
   locations.rs
   main.rs
 )
@@ -1507,7 +1508,6 @@ set(EXPECTED_DATA
   mapres/generic_clear.png
   mapres/generic_deathtiles.png
   mapres/generic_lamps.png
-  mapres/generic_shadows_0.7.png
   mapres/generic_unhookable.png
   mapres/generic_unhookable_0.7.png
   mapres/grass_doodads.png
@@ -1637,6 +1637,7 @@ set(EXPECTED_DATA
   skins/ghost.png
   skins/ghostjtj.png
   skins/giraffe.png
+  skins/glow_mermyfox.png
   skins/greensward.png
   skins/greyfox.png
   skins/greyfox_2.png
@@ -1828,6 +1829,14 @@ set(EXPECTED_DATA
   skins7/x_ninja.json
   skins7/xmas_hat.png
   strong_weak.png
+  tclient/fonts/Cabin-Regular.ttf
+  tclient/fonts/GoogleSans-Regular.ttf
+  tclient/fonts/Inter_24pt-Regular.ttf
+  tclient/fonts/Inter_24pt-SemiBold.ttf
+  tclient/fonts/Montserrat-Regular.ttf
+  tclient/fonts/Nunito-Black.ttf
+  tclient/fonts/Rubik-Regular.ttf
+  tclient/fonts/minecraft_font.ttf
   themes/auto.png
   themes/autumn.png
   themes/autumn_day.map
@@ -1861,6 +1870,13 @@ foreach(datafile ${DATA})
   file(MAKE_DIRECTORY ${DESTINATION})
   file(COPY ${datafile} DESTINATION ${DESTINATION})
 endforeach()
+set(INTEGRATION_TEST_COPY_FILES
+  lsan.supp
+  memcheck.supp
+  ubsan.supp
+  valgrind.supp
+  scripts/integration_test.sh
+)
 set(COPY_FILES
   ${CURL_COPY_FILES}
   ${FREETYPE_COPY_FILES}
@@ -1872,10 +1888,13 @@ set(COPY_FILES
   ${WEBSOCKETS_COPY_FILES}
   ${DISCORDSDK_COPY_FILES}
   ${VULKAN_COPY_FILES}
-  ${CRASHDUMP_COPY_FILES}
+  ${EXCEPTION_HANDLING_COPY_FILES}
   ${SSP_COPY_FILES}
 )
 file(COPY ${COPY_FILES} DESTINATION .)
+# Don't add integration test files to COPY_FILES since we don't want to add
+# them in cpack.
+file(COPY ${INTEGRATION_TEST_COPY_FILES} DESTINATION .)
 
 set(COPY_DIRS ${SDL2_COPY_DIRS})
 file(COPY ${COPY_DIRS} DESTINATION .)
@@ -1984,7 +2003,6 @@ set_src(BASE GLOB_RECURSE src/base
   bezier.h
   color.cpp
   color.h
-  crashdump.cpp
   detect.h
   dynamic.h
   hash.cpp
@@ -2119,6 +2137,7 @@ set_src(ENGINE_SHARED GLOB_RECURSE src/engine/shared
   storage.cpp
   stun.cpp
   stun.h
+  tater_variables.h
   teehistorian_ex.cpp
   teehistorian_ex.h
   teehistorian_ex_chunks.h
@@ -2130,6 +2149,9 @@ set_src(ENGINE_SHARED GLOB_RECURSE src/engine/shared
   video.h
   websockets.cpp
   websockets.h
+)
+set_src(ENGINE_EXTERNAL GLOB src/engine/external
+  remimu.h
 )
 set_src(ENGINE_GFX GLOB src/engine/gfx
   image.cpp
@@ -2210,7 +2232,7 @@ set(LIBS
 # Targets
 add_library(engine-gfx EXCLUDE_FROM_ALL OBJECT ${ENGINE_GFX})
 target_include_directories(engine-gfx PRIVATE ${PNG_INCLUDE_DIRS})
-add_library(engine-shared EXCLUDE_FROM_ALL OBJECT ${ENGINE_INTERFACE} ${ENGINE_SHARED} ${ENGINE_UUID_SHARED} ${BASE})
+add_library(engine-shared EXCLUDE_FROM_ALL OBJECT ${ENGINE_EXTERNAL} ${ENGINE_INTERFACE} ${ENGINE_SHARED} ${ENGINE_UUID_SHARED} ${BASE})
 add_library(game-shared EXCLUDE_FROM_ALL OBJECT ${GAME_SHARED} ${GAME_GENERATED_SHARED})
 list(APPEND TARGETS_OWN engine-gfx engine-shared game-shared)
 
@@ -2288,7 +2310,6 @@ if(CLIENT)
     graphics_threaded.h
     input.cpp
     input.h
-    keynames.cpp
     keynames.h
     notifications.cpp
     notifications.h
@@ -2392,6 +2413,29 @@ if(CLIENT)
     components/spectator.h
     components/statboard.cpp
     components/statboard.h
+    components/tclient/bindchat.cpp
+    components/tclient/bindchat.h
+    components/tclient/bindwheel.cpp
+    components/tclient/bindwheel.h
+    components/tclient/menus_tclient.cpp
+    components/tclient/outlines.cpp
+    components/tclient/outlines.h
+    components/tclient/player_indicator.cpp
+    components/tclient/player_indicator.h
+    components/tclient/rainbow.cpp
+    components/tclient/rainbow.h
+    components/tclient/skinprofiles.cpp
+    components/tclient/skinprofiles.h
+    components/tclient/statusbar.cpp
+    components/tclient/statusbar.h
+    components/tclient/tater.cpp
+    components/tclient/tater.h
+    components/tclient/trails.cpp
+    components/tclient/trails.h
+    components/tclient/verify.cpp
+    components/tclient/verify.h
+    components/tclient/warlist.cpp
+    components/tclient/warlist.h
     components/tooltips.cpp
     components/tooltips.h
     components/touch_controls.cpp
@@ -2408,8 +2452,6 @@ if(CLIENT)
     pickup_data.h
     prediction/entities/character.cpp
     prediction/entities/character.h
-    prediction/entities/door.cpp
-    prediction/entities/door.h
     prediction/entities/dragger.cpp
     prediction/entities/dragger.h
     prediction/entities/laser.cpp
@@ -2429,10 +2471,8 @@ if(CLIENT)
     render.cpp
     render.h
     render_map.cpp
-    sixup_translate_connless.cpp
     sixup_translate_game.cpp
     sixup_translate_snapshot.cpp
-    skin.cpp
     skin.h
     ui.cpp
     ui.h
@@ -2506,8 +2546,6 @@ if(CLIENT)
     prompt.h
     proof_mode.cpp
     proof_mode.h
-    quadart.cpp
-    quadart.h
     quick_action.h
     quick_actions.cpp
     quick_actions.h
@@ -2558,12 +2596,8 @@ if(CLIENT)
   endif()
 
   if(TARGET_OS STREQUAL "windows")
-    set(VERSION_EXECUTABLE "${CLIENT_EXECUTABLE}")
-    set(VERSION_COMPANY "${CLIENT_EXECUTABLE} Team")
-    configure_file("other/versioninfo/versioninfo.rc.in" "client.versioninfo.rc")
     configure_file("other/manifest/client.manifest.in" "client.manifest")
     set(CLIENT_ICON "other/icons/DDNet.rc")
-    set(CLIENT_VERSIONINFO "${CMAKE_CURRENT_BINARY_DIR}/client.versioninfo.rc")
     if(NOT MINGW)
       set(CLIENT_MANIFEST "${CMAKE_CURRENT_BINARY_DIR}/client.manifest")
     else()
@@ -2572,7 +2606,6 @@ if(CLIENT)
     endif()
   else()
     set(CLIENT_ICON)
-    set(CLIENT_VERSIONINFO)
     set(CLIENT_MANIFEST)
   endif()
 
@@ -2581,7 +2614,6 @@ if(CLIENT)
     add_library(game-client SHARED
       ${CLIENT_SRC}
       ${CLIENT_ICON}
-      ${CLIENT_VERSIONINFO}
       ${CLIENT_MANIFEST}
       ${DEPS_CLIENT}
       $<TARGET_OBJECTS:engine-gfx>
@@ -2593,7 +2625,6 @@ if(CLIENT)
     add_executable(game-client WIN32
       ${CLIENT_SRC}
       ${CLIENT_ICON}
-      ${CLIENT_VERSIONINFO}
       ${CLIENT_MANIFEST}
       ${DEPS_CLIENT}
       $<TARGET_OBJECTS:engine-gfx>
@@ -2678,7 +2709,7 @@ if(SERVER)
     antibot_null.cpp
   )
 
-  set_src(ENGINE_SERVER_WITHOUT_MAIN GLOB_RECURSE src/engine/server
+  set_src(ENGINE_SERVER GLOB_RECURSE src/engine/server
     antibot.cpp
     antibot.h
     authmanager.cpp
@@ -2705,9 +2736,6 @@ if(SERVER)
     upnp.cpp
     upnp.h
   )
-
-  list(REMOVE_ITEM ENGINE_SERVER_WITHOUT_MAIN "${PROJECT_SOURCE_DIR}/src/engine/server/main.cpp")
-
   set_src(GAME_SERVER GLOB_RECURSE src/game/server
     ddracechat.cpp
     ddracecommands.cpp
@@ -2765,16 +2793,11 @@ if(SERVER)
     "src/game/generated/server_data.h"
     "src/game/generated/wordlist.h"
   )
-  set(SERVER_SRC ${ENGINE_SERVER_WITHOUT_MAIN} ${GAME_SERVER} ${GAME_GENERATED_SERVER})
+  set(SERVER_SRC ${ENGINE_SERVER} ${GAME_SERVER} ${GAME_GENERATED_SERVER})
   if(TARGET_OS STREQUAL "windows")
-    set(VERSION_EXECUTABLE "${SERVER_EXECUTABLE}")
-    set(VERSION_COMPANY "${CLIENT_EXECUTABLE} Team")
-    configure_file("other/versioninfo/versioninfo.rc.in" "server.versioninfo.rc")
     set(SERVER_ICON "other/icons/DDNet-Server.rc")
-    set(SERVER_VERSIONINFO "${CMAKE_CURRENT_BINARY_DIR}/server.versioninfo.rc")
   else()
     set(SERVER_ICON)
-    set(SERVER_VERSIONINFO)
   endif()
 
   # Antibot
@@ -2794,28 +2817,12 @@ if(SERVER)
     ${LIBS}
   )
 
-  add_library(game-server-without-main OBJECT
-      ${DEPS}
-      ${SERVER_SRC}
-      $<TARGET_OBJECTS:engine-shared>
-      $<TARGET_OBJECTS:game-shared>
-      $<TARGET_OBJECTS:rust-bridge-shared>
-  )
-  set_property(TARGET game-server-without-main
-      PROPERTY OUTPUT_NAME ${SERVER_EXECUTABLE}
-  )
-  target_link_libraries(game-server-without-main ${LIBS_SERVER})
-  list(APPEND TARGETS_OWN game-server-without-main)
-  list(APPEND TARGETS_LINK game-server-without-main)
-
   # Target
   if(TARGET_OS STREQUAL "android")
     add_library(game-server SHARED
       ${DEPS}
-      $<TARGET_OBJECTS:game-server-without-main>
-      "${PROJECT_SOURCE_DIR}/src/engine/server/main.cpp"
+      ${SERVER_SRC}
       ${SERVER_ICON}
-      ${SERVER_VERSIONINFO}
       $<TARGET_OBJECTS:engine-shared>
       $<TARGET_OBJECTS:game-shared>
       $<TARGET_OBJECTS:rust-bridge-shared>
@@ -2823,10 +2830,8 @@ if(SERVER)
   else()
     add_executable(game-server
       ${DEPS}
-      "${PROJECT_SOURCE_DIR}/src/engine/server/main.cpp"
+      ${SERVER_SRC}
       ${SERVER_ICON}
-      ${SERVER_VERSIONINFO}
-      $<TARGET_OBJECTS:game-server-without-main>
       $<TARGET_OBJECTS:engine-shared>
       $<TARGET_OBJECTS:game-shared>
       $<TARGET_OBJECTS:rust-bridge-shared>
@@ -2836,6 +2841,7 @@ if(SERVER)
       PROPERTY OUTPUT_NAME ${SERVER_EXECUTABLE}
   )
   target_link_libraries(game-server ${LIBS_SERVER})
+  target_include_directories(game-server PRIVATE ${PNG_INCLUDE_DIRS})
   list(APPEND TARGETS_OWN game-server)
   list(APPEND TARGETS_LINK game-server)
 
@@ -2879,6 +2885,7 @@ if(TOOLS)
     dilate.cpp
     dummy_map.cpp
     map_convert_07.cpp
+    map_create_pixelart.cpp
     map_diff.cpp
     map_extract.cpp
     map_find_env.cpp
@@ -2886,7 +2893,6 @@ if(TOOLS)
     map_replace_area.cpp
     map_replace_image.cpp
     map_resave.cpp
-    map_test.cpp
     packetgen.cpp
     stun.cpp
     twping.cpp
@@ -2900,7 +2906,7 @@ if(TOOLS)
       set(TOOL_DEPS ${DEPS})
       set(TOOL_LIBS ${LIBS})
       unset(EXTRA_TOOL_SRC)
-      if(TOOL MATCHES "^(dilate|map_convert_07|map_optimize|map_extract|map_replace_image)$")
+      if(TOOL MATCHES "^(dilate|map_convert_07|map_create_pixelart|map_optimize|map_extract|map_replace_image)$")
         list(APPEND TOOL_INCLUDE_DIRS ${PNG_INCLUDE_DIRS})
         list(APPEND TOOL_DEPS $<TARGET_OBJECTS:engine-gfx>)
         list(APPEND TOOL_LIBS ${PNG_LIBRARIES})
@@ -2966,20 +2972,18 @@ add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/src/game/generated/checksum.cpp
 # TESTS
 ########################################################################
 
-if((GTEST_FOUND OR DOWNLOAD_GTEST) AND SERVER)
+if(GTEST_FOUND OR DOWNLOAD_GTEST)
   set_src(TESTS GLOB src/test
     aio.cpp
     bezier.cpp
     blocklist_driver.cpp
     bytes_be.cpp
-    chunk_header.cpp
     color.cpp
     compression.cpp
     csv.cpp
     datafile.cpp
     editor.cpp
     fs.cpp
-    gameworld.cpp
     git_revision.cpp
     hash.cpp
     huffman.cpp
@@ -3001,7 +3005,6 @@ if((GTEST_FOUND OR DOWNLOAD_GTEST) AND SERVER)
     secure_random.cpp
     serverbrowser.cpp
     serverinfo.cpp
-    shell_execute.cpp
     snapshot.cpp
     str.cpp
     strip_path_and_extension.cpp
@@ -3024,20 +3027,30 @@ if((GTEST_FOUND OR DOWNLOAD_GTEST) AND SERVER)
     src/engine/client/serverbrowser_ping_cache.cpp
     src/engine/client/serverbrowser_ping_cache.h
     src/engine/client/sqlite.cpp
+    src/engine/server/databases/connection.cpp
+    src/engine/server/databases/connection.h
+    src/engine/server/databases/sqlite.cpp
+    src/engine/server/databases/mysql.cpp
+    src/engine/server/name_ban.cpp
+    src/engine/server/name_ban.h
+    src/engine/server/sql_string_helpers.cpp
+    src/engine/server/sql_string_helpers.h
+    src/game/server/teehistorian.cpp
+    src/game/server/teehistorian.h
+    src/game/server/scoreworker.cpp
+    src/game/server/scoreworker.h
   )
 
   set(TARGET_TESTRUNNER testrunner)
   add_executable(${TARGET_TESTRUNNER} EXCLUDE_FROM_ALL
     ${TESTS}
     ${TESTS_EXTRA}
-    $<TARGET_OBJECTS:game-server-without-main>
     $<TARGET_OBJECTS:engine-gfx>
     $<TARGET_OBJECTS:engine-shared>
     $<TARGET_OBJECTS:game-shared>
-    $<TARGET_OBJECTS:rust-bridge-shared>
     ${DEPS}
   )
-  target_link_libraries(${TARGET_TESTRUNNER} ${PNG_LIBRARIES} ${GTEST_LIBRARIES} ${LIBS_SERVER})
+  target_link_libraries(${TARGET_TESTRUNNER} ${MYSQL_LIBRARIES} ${PNG_LIBRARIES} ${GTEST_LIBRARIES} ${LIBS})
   target_include_directories(${TARGET_TESTRUNNER} SYSTEM PRIVATE ${GTEST_INCLUDE_DIRS})
 
   list(APPEND TARGETS_OWN ${TARGET_TESTRUNNER})
@@ -3081,6 +3094,13 @@ add_custom_target(run_rust_tests
   USES_TERMINAL
   DEPENDS rust_test
   VERBATIM
+)
+
+add_custom_target(run_integration_tests
+  COMMAND ${PROJECT_BINARY_DIR}/integration_test.sh ${INTEGRATIONTESTRUNNER_ARGS}
+  COMMENT Running integration tests
+  DEPENDS game-client game-server
+  USES_TERMINAL
 )
 
 ########################################################################
@@ -3246,6 +3266,7 @@ if(TOOLS)
     demo_extract_chat
     dilate
     map_convert_07
+    map_create_pixelart
     map_diff
     map_extract
   )
@@ -3529,10 +3550,6 @@ foreach(target ${TARGETS})
   if(ENABLE_IPO)
     set_property(TARGET ${target} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
   endif()
-  if(TARGET_OS STREQUAL "emscripten")
-    # Preload data directory into the filesystem
-    target_link_options(${target} PRIVATE --preload-file data)
-  endif()
 endforeach()
 
 foreach(target ${TARGETS_LINK})
@@ -3581,7 +3598,6 @@ foreach(target ${TARGETS_OWN})
   target_compile_definitions(${target} PRIVATE $<$<CONFIG:Debug>:CONF_DEBUG>)
   target_include_directories(${target} SYSTEM PRIVATE ${CURL_INCLUDE_DIRS} ${SQLite3_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS})
   target_compile_definitions(${target} PRIVATE GLEW_STATIC)
-  target_compile_definitions(${target} PRIVATE _FILE_OFFSET_BITS=64) # Ensure off_t is 64 bit for ftello and fseeko functions
   if(CRYPTO_FOUND)
     target_compile_definitions(${target} PRIVATE CONF_OPENSSL)
     target_include_directories(${target} SYSTEM PRIVATE ${CRYPTO_INCLUDE_DIRS})
@@ -3599,9 +3615,6 @@ foreach(target ${TARGETS_OWN})
   endif()
   if(ANTIBOT)
     target_compile_definitions(${target} PRIVATE CONF_ANTIBOT)
-  endif()
-  if(EXCEPTION_HANDLING)
-    target_compile_definitions(${target} PRIVATE CONF_CRASHDUMP)
   endif()
   if(HEADLESS_CLIENT)
     target_compile_definitions(${target} PRIVATE CONF_HEADLESS_CLIENT)
@@ -3630,6 +3643,9 @@ foreach(target ${TARGETS_OWN})
   endif()
   if(VERSION)
     target_compile_definitions(${target} PRIVATE GAME_RELEASE_VERSION="${VERSION}")
+  endif()
+  if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+   target_compile_definitions(${target} PRIVATE CONF_WEBASM)
   endif()
   if(TARGET_OS STREQUAL "android")
     if(ANDROID_PACKAGE_NAME)

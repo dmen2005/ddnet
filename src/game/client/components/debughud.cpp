@@ -63,8 +63,8 @@ void CDebugHud::RenderNetCorrections()
 	str_format(aBuf, sizeof(aBuf), "%d", pCharacter == nullptr ? -1 : pCharacter->m_TeleCheckpoint);
 	RenderRow("Checkpoint:", aBuf);
 
-	str_format(aBuf, sizeof(aBuf), "%d / %d", pCharacter == nullptr ? -1 : pCharacter->GetPureTuneZone(), pCharacter == nullptr ? -1 : pCharacter->GetOverriddenTuneZone());
-	RenderRow("Tune zone (pure / override):", aBuf);
+	str_format(aBuf, sizeof(aBuf), "%d", pCharacter == nullptr ? -1 : pCharacter->m_TuneZone);
+	RenderRow("Tune zone:", aBuf);
 
 	str_format(aBuf, sizeof(aBuf), "%.2f", m_pClient->m_Snap.m_pLocalCharacter->m_X / 32.0f);
 	RenderRow("Pos.x:", aBuf);
@@ -96,7 +96,7 @@ void CDebugHud::RenderTuning()
 
 	const CTuningParams StandardTuning;
 	const CTuningParams *pGlobalTuning = m_pClient->GetTuning(0);
-	const CTuningParams *pZoneTuning = !m_pClient->m_GameWorld.m_WorldConfig.m_UseTuneZones || pCharacter == nullptr ? nullptr : m_pClient->GetTuning(pCharacter->GetOverriddenTuneZone());
+	const CTuningParams *pZoneTuning = !m_pClient->m_GameWorld.m_WorldConfig.m_UseTuneZones || pCharacter == nullptr ? nullptr : m_pClient->GetTuning(pCharacter->m_TuneZone);
 	const CTuningParams *pActiveTuning = pZoneTuning == nullptr ? pGlobalTuning : pZoneTuning;
 
 	const float Height = 300.0f;
@@ -259,7 +259,60 @@ void CDebugHud::RenderHint()
 	TextRender()->Text(Spacing, Height - FontSize - Spacing, FontSize, Localize("Debug mode enabled. Press Ctrl+Shift+D to disable debug mode."));
 }
 
-void CDebugHud::OnRender()
+void CDebugHud::RenderTaterDebug() 
+{
+	if(!g_Config.m_Debug)
+		return;
+	Graphics()->TextureClear();
+	GameClient()->RenderTools()->MapScreenToGroup(GameClient()->m_Camera.m_Center.x, GameClient()->m_Camera.m_Center.y, GameClient()->Layers()->GameGroup(), GameClient()->m_Camera.m_Zoom);
+	for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
+	{
+		//if(!m_pClient->m_Snap.m_aCharacters[ClientId].m_Active)
+		//{
+		//	continue;
+		//}
+		//vec2 ServerPos = mix(vec2(GameClient()->m_Snap.m_aCharacters[ClientId].m_Prev.m_X, GameClient()->m_Snap.m_aCharacters[ClientId].m_Prev.m_Y),
+		//	vec2(GameClient()->m_Snap.m_aCharacters[ClientId].m_Cur.m_X, GameClient()->m_Snap.m_aCharacters[ClientId].m_Cur.m_Y),
+		//	Client()->IntraGameTick(g_Config.m_ClDummy));
+
+		//vec2 RenderPos = m_pClient->m_aClients[ClientId].m_RenderPos;
+		//vec2 Vector = m_pClient->m_aClients[ClientId].m_DebugVector;
+		//vec2 StartPos = ServerPos;
+		//vec2 EndPos = ServerPos + (Vector);
+		//Graphics()->LinesBegin();
+		//Graphics()->SetColor(ColorRGBA(0.0f, 1.0, 0.0f, 1.0f));
+
+		//IGraphics::CLineItem LineItem(StartPos.x, StartPos.y, EndPos.x, EndPos.y);
+		//Graphics()->LinesDraw(&LineItem, 1);
+
+		//EndPos = ServerPos + m_pClient->m_aClients[ClientId].m_DebugVector2;
+		//LineItem = IGraphics::CLineItem(StartPos.x, StartPos.y, EndPos.x, EndPos.y);
+		//Graphics()->SetColor(ColorRGBA(0.5f, 0.5, 1.0f, 1.0f));
+		//Graphics()->LinesDraw(&LineItem, 1);
+
+		//EndPos = ServerPos + m_pClient->m_aClients[ClientId].m_DebugVector3;
+		//LineItem = IGraphics::CLineItem(StartPos.x, StartPos.y, EndPos.x, EndPos.y);
+		//Graphics()->SetColor(ColorRGBA(1.0f, 0.0, 0.0f, 1.0f));
+		//Graphics()->LinesDraw(&LineItem, 1);
+		//Graphics()->LinesEnd();
+
+		//Graphics()->LinesBegin();
+		//Graphics()->SetColor(ColorRGBA(0.0f, 1.0, 0.0f, 1.0f));
+		//for(int i = 0; i < 20; i++)
+		//{
+		//	break;
+		//	int GameTick = Client()->GameTick(g_Config.m_ClDummy) - i;
+		//	vec2 EndPos = m_pClient->m_aClients[ClientId].m_aPredPos[(GameTick) % 200];
+		//	vec2 StartPos = m_pClient->m_aClients[ClientId].m_aPredPos[(GameTick - 1) % 200];
+
+		//	LineItem = IGraphics::CLineItem(StartPos.x, StartPos.y, EndPos.x, EndPos.y);
+		//	Graphics()->LinesDraw(&LineItem, 1);
+		//}
+		//Graphics()->LinesEnd();
+	}
+}
+
+	void CDebugHud::OnRender()
 {
 	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		return;
@@ -267,4 +320,5 @@ void CDebugHud::OnRender()
 	RenderTuning();
 	RenderNetCorrections();
 	RenderHint();
+	// RenderTaterDebug();
 }

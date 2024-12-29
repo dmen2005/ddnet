@@ -14,7 +14,6 @@
 #include <game/collision.h>
 #include <game/gamecore.h>
 #include <game/layers.h>
-#include <game/mapbugs.h>
 #include <game/teamscore.h>
 
 #include <game/client/prediction/gameworld.h>
@@ -59,10 +58,19 @@
 #include "components/spectator.h"
 #include "components/statboard.h"
 #include "components/tooltips.h"
+#include "components/tclient/bindchat.h"
+#include "components/tclient/bindwheel.h"
+#include "components/tclient/outlines.h"
+#include "components/tclient/player_indicator.h"
+#include "components/tclient/rainbow.h"
+#include "components/tclient/skinprofiles.h"
+#include "components/tclient/statusbar.h"
+#include "components/tclient/tater.h"
+#include "components/tclient/trails.h"
+#include "components/tclient/verify.h"
+#include "components/tclient/warlist.h"
 #include "components/touch_controls.h"
 #include "components/voting.h"
-
-#include <vector>
 
 class CGameInfo
 {
@@ -108,8 +116,6 @@ public:
 
 	bool m_NoWeakHookAndBounce;
 	bool m_NoSkinChangeForFrozen;
-
-	bool m_DDRaceTeam;
 };
 
 class CSnapEntities
@@ -151,9 +157,11 @@ public:
 	CStatboard m_Statboard;
 	CSounds m_Sounds;
 	CEmoticon m_Emoticon;
+	
 	CDamageInd m_DamageInd;
 	CTouchControls m_TouchControls;
 	CVoting m_Voting;
+	CVerify m_Verify;
 	CSpectator m_Spectator;
 
 	CPlayers m_Players;
@@ -173,6 +181,18 @@ public:
 	CGhost m_Ghost;
 
 	CTooltips m_Tooltips;
+
+	// TClient Components
+	CSkinProfiles m_SkinProfiles;
+	CStatusBar m_StatusBar;
+	CBindchat m_Bindchat;
+	CBindWheel m_Bindwheel;
+	CTater m_Tater;
+	CTrails m_Trails;
+	CPlayerIndicator m_PlayerIndicator;
+	COutlines m_Outlines;
+	CRainbow m_Rainbow;
+	CWarList m_WarList;
 
 private:
 	std::vector<class CComponent *> m_vpAll;
@@ -196,7 +216,6 @@ private:
 	class IEditor *m_pEditor;
 	class IFriends *m_pFriends;
 	class IFriends *m_pFoes;
-	class IDiscord *m_pDiscord;
 #if defined(CONF_AUTOUPDATE)
 	class IUpdater *m_pUpdater;
 #endif
@@ -225,7 +244,6 @@ private:
 	int m_aCheckInfo[NUM_DUMMIES];
 
 	char m_aDDNetVersionStr[64];
-
 	static void ConTeam(IConsole::IResult *pResult, void *pUserData);
 	static void ConKill(IConsole::IResult *pResult, void *pUserData);
 	static void ConReadyChange7(IConsole::IResult *pResult, void *pUserData);
@@ -236,9 +254,7 @@ private:
 	static void ConchainRefreshSkins(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainSpecialDummy(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
-	static void ConTuneParam(IConsole::IResult *pResult, void *pUserData);
 	static void ConTuneZone(IConsole::IResult *pResult, void *pUserData);
-	static void ConMapbug(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConchainMenuMap(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
@@ -307,8 +323,6 @@ public:
 	int m_ServerMode;
 	CGameInfo m_GameInfo;
 
-	char m_aSavedLocalRconPassword[sizeof(g_Config.m_SvRconPassword)] = "";
-
 	int m_DemoSpecId;
 
 	vec2 m_LocalCharacterPos;
@@ -354,7 +368,6 @@ public:
 			float m_Zoom;
 			int m_Deadzone;
 			int m_FollowFactor;
-			int m_SpectatorCount;
 		} m_SpecInfo;
 
 		//
@@ -415,13 +428,8 @@ public:
 	} m_CursorInfo;
 
 	// client data
-	class CClientData
+	struct CClientData
 	{
-		friend class CGameClient;
-		CGameClient *m_pGameClient;
-		int m_ClientId;
-
-	public:
 		int m_UseCustomColor;
 		int m_ColorBody;
 		int m_ColorFeet;
@@ -430,6 +438,7 @@ public:
 		char m_aClan[MAX_CLAN_LENGTH];
 		int m_Country;
 		char m_aSkinName[MAX_SKIN_LENGTH];
+		int m_SkinColor;
 		int m_Team;
 		int m_Emoticon;
 		float m_EmoticonStartFraction;
@@ -457,7 +466,15 @@ public:
 		CCharacterCore m_Predicted;
 		CCharacterCore m_PrevPredicted;
 
-		std::shared_ptr<CManagedTeeRenderInfo> m_pSkinInfo = nullptr; // this is what the server reports
+		// TClient
+		vec2 m_ImprovedPredPos = vec2(0, 0);
+		vec2 m_PrevImprovedPredPos = vec2(0, 0);
+		//vec2 m_DebugVector = vec2(0, 0);
+		//vec2 m_DebugVector2 = vec2(0, 0);
+		//vec2 m_DebugVector3 = vec2(0, 0);
+		float m_Uncertainty = 0.0f;
+
+		CTeeRenderInfo m_SkinInfo; // this is what the server reports
 		CTeeRenderInfo m_RenderInfo; // this is what we use
 
 		float m_Angle;
@@ -471,9 +488,6 @@ public:
 		bool m_Afk;
 		bool m_Paused;
 		bool m_Spec;
-
-		char m_aLastMessageText[256];
-		int64_t m_LastMessageStart;
 
 		// Editor allows 256 switches for now.
 		bool m_aSwitchStates[256];
@@ -494,14 +508,8 @@ public:
 		bool m_SpecCharPresent;
 		vec2 m_SpecChar;
 
-		void UpdateSkinInfo();
-		void UpdateSkin7HatSprite(int Dummy);
-		void UpdateSkin7BotDecoration(int Dummy);
-		void UpdateRenderInfo();
+		void UpdateRenderInfo(bool IsTeamPlay);
 		void Reset();
-		CSkinDescriptor ToSkinDescriptor() const;
-
-		int ClientId() const { return m_ClientId; }
 
 		class CSixup
 		{
@@ -601,12 +609,7 @@ public:
 	void OnLanguageChange();
 	void HandleLanguageChanged();
 
-	void RefreshSkin(const std::shared_ptr<CManagedTeeRenderInfo> &pManagedTeeRenderInfo);
-	void RefreshSkins(int SkinDescriptorFlags);
-	void OnSkinUpdate(const char *pSkinName);
-	std::shared_ptr<CManagedTeeRenderInfo> CreateManagedTeeRenderInfo(const CTeeRenderInfo &TeeRenderInfo, const CSkinDescriptor &SkinDescriptor);
-	std::shared_ptr<CManagedTeeRenderInfo> CreateManagedTeeRenderInfo(const CClientData &Client);
-	void CollectManagedTeeRenderInfos(const std::function<void(const char *pSkinName)> &ActiveSkinAcceptor);
+	void RefreshSkins();
 
 	void RenderShutdownMessage() override;
 
@@ -629,7 +632,7 @@ public:
 	bool GotWantedSkin7(bool Dummy);
 	void SendInfo(bool Start);
 	void SendDummyInfo(bool Start) override;
-	void SendKill() const;
+	void SendKill(int ClientId) const;
 	void SendReadyChange7();
 
 	int m_NextChangeInfo;
@@ -640,8 +643,6 @@ public:
 	CNetObj_PlayerInput m_DummyInput;
 	CNetObj_PlayerInput m_HammerInput;
 	unsigned int m_DummyFire;
-	unsigned int m_Dummyhook;
-
 	bool m_ReceivedDDNetPlayer;
 
 	class CTeamsCore m_Teams;
@@ -666,6 +667,9 @@ public:
 	CGameWorld m_GameWorld;
 	CGameWorld m_PredictedWorld;
 	CGameWorld m_PrevPredictedWorld;
+	// TClient
+	CGameWorld m_ExtraPredictedWorld;
+	CGameWorld m_PredSmoothingWorld;
 
 	std::vector<SSwitchers> &Switchers() { return m_GameWorld.m_Core.m_vSwitchers; }
 	std::vector<SSwitchers> &PredSwitchers() { return m_PredictedWorld.m_Core.m_vSwitchers; }
@@ -678,6 +682,8 @@ public:
 	bool CanDisplayWarning() const override;
 	CNetObjHandler *GetNetObjHandler() override;
 	protocol7::CNetObjHandler *GetNetObjHandler7() override;
+
+	bool CheckNewInput() override;
 
 	void LoadGameSkin(const char *pPath, bool AsDir = false);
 	void LoadEmoticonsSkin(const char *pPath, bool AsDir = false);
@@ -840,8 +846,7 @@ public:
 	{
 		IGraphics::CTextureHandle m_SpriteParticleSnowflake;
 		IGraphics::CTextureHandle m_SpriteParticleSparkle;
-		IGraphics::CTextureHandle m_SpritePulley;
-		IGraphics::CTextureHandle m_aSpriteParticles[3];
+		IGraphics::CTextureHandle m_aSpriteParticles[2];
 	};
 
 	SClientExtrasSkin m_ExtrasSkin;
@@ -849,6 +854,8 @@ public:
 
 	const std::vector<CSnapEntities> &SnapEntities() { return m_vSnapEntities; }
 
+	vec2 GetSmoothPos(int ClientId);
+	vec2 GetFreezePos(int ClientId);
 	int m_MultiViewTeam;
 	float m_MultiViewPersonalZoom;
 	bool m_MultiViewShowHud;
@@ -866,9 +873,6 @@ private:
 	bool m_aDDRaceMsgSent[NUM_DUMMIES];
 	int m_aShowOthers[NUM_DUMMIES];
 
-	std::vector<std::shared_ptr<CManagedTeeRenderInfo>> m_vpManagedTeeRenderInfos;
-	void UpdateManagedTeeRenderInfos();
-
 	void UpdatePrediction();
 	void UpdateSpectatorCursor();
 	void UpdateRenderedCharacters();
@@ -876,15 +880,16 @@ private:
 	int m_aLastUpdateTick[MAX_CLIENTS] = {0};
 	void DetectStrongHook();
 
-	vec2 GetSmoothPos(int ClientId);
-
 	int m_PredictedDummyId;
 	int m_IsDummySwapping;
 	CCharOrder m_CharOrder;
 	int m_aSwitchStateTeam[NUM_DUMMIES];
 
+	enum
+	{
+		NUM_TUNEZONES = 256
+	};
 	void LoadMapSettings();
-	CMapBugs m_MapBugs;
 	CTuningParams m_aTuningList[NUM_TUNEZONES];
 	CTuningParams *TuningList() { return m_aTuningList; }
 
