@@ -541,6 +541,7 @@ void CChat::OnMessage(int MsgType, void *pRawMsg)
 	{
 		CNetMsg_Sv_Chat *pMsg = (CNetMsg_Sv_Chat *)pRawMsg;
 		AddLine(pMsg->m_ClientId, pMsg->m_Team, pMsg->m_pMessage);
+
 	}
 	else if(MsgType == NETMSGTYPE_SV_COMMANDINFO)
 	{
