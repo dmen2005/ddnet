@@ -81,6 +81,7 @@ public:
 
 	void SetDDRaceBinds(bool FreeOnly);
 
+
 private:
 	char *m_aapKeyBindings[MODIFIER_COMBINATION_COUNT][KEY_LAST];
 	std::vector<CBindSlot> m_vActiveBinds;
