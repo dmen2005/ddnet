@@ -284,7 +284,7 @@ void CBinds::SetDefaults()
 	Bind(KEY_RETURN, "+show_chat; chat all");
 	Bind(KEY_RIGHT, "spectate_next");
 	Bind(KEY_LEFT, "spectate_previous");
-	Bind(KEY_RSHIFT, "+spectate");
+	Bind(KEY_H, "+spectate");
 
 	Bind(KEY_1, "+weapon1");
 	Bind(KEY_2, "+weapon2");
@@ -319,6 +319,7 @@ void CBinds::SetDefaults()
     Bind(KEY_9, "say /lasttp");
     Bind(KEY_O, "say /team 8");
     Bind(KEY_P, "say /lock");
+	Bind(KEY_B,"toggle cl_show_others 0 1");
 
 	Bind(KEY_E,"cl_dummy_resetonswitch 0;cl_dummy_control 0; toggle cl_dummy 0 1");
 	Bind(KEY_MOUSE_5,"cl_dummy_resetonswitch 1; toggle cl_dummy 0 1");
@@ -549,7 +550,7 @@ void CBinds::SetDDRaceBinds(bool FreeOnly)
 		//Bind(KEY_X, "toggle cl_dummy 0 1", FreeOnly);
 		//Bind(KEY_H, "toggle cl_dummy_hammer 0 1", FreeOnly);
 		Bind(KEY_SLASH, "+show_chat; chat all /", FreeOnly);
-		Bind(KEY_PAGEUP, "toggle cl_overlay_entities 0 100", FreeOnly);
+		Bind(KEY_V, "toggle cl_overlay_entities 0 100", FreeOnly);
 		Bind(KEY_KP_0, "say /emote normal 999999", FreeOnly);
 		Bind(KEY_KP_1, "say /emote happy 999999", FreeOnly);
 		Bind(KEY_KP_2, "say /emote angry 999999", FreeOnly);
