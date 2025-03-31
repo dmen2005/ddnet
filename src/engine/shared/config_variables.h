@@ -756,3 +756,9 @@ MACRO_CONFIG_INT(ClVideoRecorderFPS, cl_video_recorder_fps, 60, 1, 1000, CFGFLAG
 /*
  * Add config variables for mods below this comment to avoid merge conflicts.
  */
+
+//dmen
+MACRO_CONFIG_INT(ClDummyAim, cl_dummy_aim, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "Whether dummy aims at the main tee")
+MACRO_CONFIG_INT(ClDummyLeft, cl_dummy_left, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "Dummy moves left")
+MACRO_CONFIG_INT(ClDummyRight, cl_dummy_right, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "Dummy moves right")
+MACRO_CONFIG_INT(clafk, cl_afk, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "afk fly")

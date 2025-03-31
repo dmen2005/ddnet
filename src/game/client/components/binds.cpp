@@ -258,7 +258,7 @@ void CBinds::GetKey(const char *pBindStr, char *pBuf, size_t BufSize)
 }
 
 
-
+//dmen
 void CBinds::SetDefaults()
 {
 	UnbindAll();

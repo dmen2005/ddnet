@@ -255,8 +255,8 @@ int CControls::SnapInput(int *pData)
 			pDummyInput->m_WantedWeapon = m_aInputData[g_Config.m_ClDummy].m_WantedWeapon;
 
 			if(!g_Config.m_ClDummyControl)
-				pDummyInput->m_Fire += m_aInputData[g_Config.m_ClDummy].m_Fire - m_aLastData[g_Config.m_ClDummy].m_Fire;
-
+			
+			pDummyInput->m_Fire += m_aInputData[g_Config.m_ClDummy].m_Fire - m_aLastData[g_Config.m_ClDummy].m_Fire;
 			pDummyInput->m_NextWeapon += m_aInputData[g_Config.m_ClDummy].m_NextWeapon - m_aLastData[g_Config.m_ClDummy].m_NextWeapon;
 			pDummyInput->m_PrevWeapon += m_aInputData[g_Config.m_ClDummy].m_PrevWeapon - m_aLastData[g_Config.m_ClDummy].m_PrevWeapon;
 
@@ -266,15 +266,63 @@ int CControls::SnapInput(int *pData)
 		if(g_Config.m_ClDummyControl)
 		{
 			CNetObj_PlayerInput *pDummyInput = &m_pClient->m_DummyInput;
+			
 			pDummyInput->m_Jump = g_Config.m_ClDummyJump;
-
+			
 			if(g_Config.m_ClDummyFire)
-				pDummyInput->m_Fire = g_Config.m_ClDummyFire;
+			pDummyInput->m_Fire = g_Config.m_ClDummyFire;
 			else if((pDummyInput->m_Fire & 1) != 0)
-				pDummyInput->m_Fire++;
-
+			pDummyInput->m_Fire++;
+			
 			pDummyInput->m_Hook = g_Config.m_ClDummyHook;
+			
+			//dmen
+			if(!g_Config.m_ClDummyCopyMoves)
+			{
+			pDummyInput->m_Direction = g_Config.m_ClDummyRight - g_Config.m_ClDummyLeft;
 		}
+	}
+	
+	//afk hover
+// AFK hover
+if (g_Config.m_clafk) 
+{
+    static float s_HoverTimer = 0.0f;
+    static bool s_ActivePhase = false;
+    const float activeDuration = 0.2f; // seconds
+    const float waitDuration = 0.1f;   // seconds
+
+    // Scale with frame time to account for different frame rates
+    s_HoverTimer += Client()->RenderFrameTime();
+
+    CNetObj_PlayerInput *pDummyInput = &m_pClient->m_DummyInput;
+    CNetObj_PlayerInput *pLocalInput = &m_aInputData[!g_Config.m_ClDummy];
+
+    if (s_ActivePhase)
+    {
+        pLocalInput->m_Hook = 1;      // Hook the main player
+        pDummyInput->m_Fire = 1;      // Fire for the dummy
+
+        if (s_HoverTimer >= activeDuration)
+        {
+            s_HoverTimer = 0.0f;
+            s_ActivePhase = false;  // Switch to wait phase
+        }
+    }
+    else
+    {
+        pLocalInput->m_Hook = 0;      // No hook for main player
+        pDummyInput->m_Fire = 0;      // No fire for dummy
+
+        if (s_HoverTimer >= waitDuration)
+        {
+            s_HoverTimer = 0.0f;
+            s_ActivePhase = true;   // Switch to active phase
+        }
+    }
+}
+
+
 
 		// stress testing
 #ifdef CONF_DEBUG
