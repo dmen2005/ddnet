@@ -841,8 +841,13 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 
 		if(LineAuthor.m_Active)
 		{
-			CurrentLine.m_Friend = LineAuthor.m_Friend;
-			CurrentLine.m_pManagedTeeRenderInfo = GameClient()->CreateManagedTeeRenderInfo(LineAuthor);
+
+			m_pClient->m_aClients[pCurrentLine->m_ClientId].m_LastMessageStart = time();
+			str_copy(m_pClient->m_aClients[pCurrentLine->m_ClientId].m_aLastMessageText, pLine);
+
+
+			pCurrentLine->m_Friend = LineAuthor.m_Friend;
+			pCurrentLine->m_pManagedTeeRenderInfo = GameClient()->CreateManagedTeeRenderInfo(LineAuthor);
 		}
 	}
 
