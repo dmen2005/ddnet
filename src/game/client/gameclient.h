@@ -635,6 +635,8 @@ public:
 	CNetObj_PlayerInput m_DummyInput;
 	CNetObj_PlayerInput m_HammerInput;
 	unsigned int m_DummyFire;
+	unsigned int m_Dummyhook;
+
 	bool m_ReceivedDDNetPlayer;
 
 	class CTeamsCore m_Teams;

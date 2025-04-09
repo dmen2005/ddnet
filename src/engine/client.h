@@ -118,6 +118,7 @@ public:
 	{
 		CONN_MAIN = 0,
 		CONN_DUMMY,
+		CONN_SLEEPER,
 		CONN_CONTACT,
 		NUM_CONNS,
 	};

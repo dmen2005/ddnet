@@ -761,4 +761,14 @@ MACRO_CONFIG_INT(ClVideoRecorderFPS, cl_video_recorder_fps, 60, 1, 1000, CFGFLAG
 MACRO_CONFIG_INT(ClDummyAim, cl_dummy_aim, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "Whether dummy aims at the main tee")
 MACRO_CONFIG_INT(ClDummyLeft, cl_dummy_left, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "Dummy moves left")
 MACRO_CONFIG_INT(ClDummyRight, cl_dummy_right, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "Dummy moves right")
-MACRO_CONFIG_INT(clafk, cl_afk, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "afk fly")
+MACRO_CONFIG_INT(ClCheats, cl_cheats, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "cheats")
+MACRO_CONFIG_INT(ClShoot, cl_shoot, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, " pew pew")
+MACRO_CONFIG_INT(ClHook, cl_hook, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, " hook")
+
+
+
+//MACRO_CONFIG_INT(ClSleeper, cl_sleeper, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "3e dummy")
+
+//MACRO_CONFIG_INT(ClAfk, cl_afk, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "afk fly")
+
+

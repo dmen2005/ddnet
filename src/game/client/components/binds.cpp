@@ -323,7 +323,7 @@ void CBinds::SetDefaults()
 
 	Bind(KEY_E,"cl_dummy_resetonswitch 0;cl_dummy_control 0; toggle cl_dummy 0 1");
 	Bind(KEY_MOUSE_5,"cl_dummy_resetonswitch 1; toggle cl_dummy 0 1");
-
+	Bind(KEY_M,"toggle cl_cheats 0 1");
 
 	g_Config.m_ClDDRaceBindsSet = 0;
 	SetDDRaceBinds(false);

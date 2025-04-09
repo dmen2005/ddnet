@@ -277,22 +277,20 @@ int CControls::SnapInput(int *pData)
 			pDummyInput->m_Hook = g_Config.m_ClDummyHook;
 			
 			//dmen
-			if(!g_Config.m_ClDummyCopyMoves)
+			if(!g_Config.m_ClDummyCopyMoves && g_Config.m_ClCheats)
 			{
 			pDummyInput->m_Direction = g_Config.m_ClDummyRight - g_Config.m_ClDummyLeft;
 		}
 	}
 	
 	//afk hover
-// AFK hover
-if (g_Config.m_clafk) 
+/*if (g_Config.m_clafk) 
 {
     static float s_HoverTimer = 0.0f;
     static bool s_ActivePhase = false;
-    const float activeDuration = 0.2f; // seconds
-    const float waitDuration = 0.1f;   // seconds
+    const float activeDuration = 0.2f; 
+    const float waitDuration = 0.1f;  
 
-    // Scale with frame time to account for different frame rates
     s_HoverTimer += Client()->RenderFrameTime();
 
     CNetObj_PlayerInput *pDummyInput = &m_pClient->m_DummyInput;
@@ -300,27 +298,27 @@ if (g_Config.m_clafk)
 
     if (s_ActivePhase)
     {
-        pLocalInput->m_Hook = 1;      // Hook the main player
-        pDummyInput->m_Fire = 1;      // Fire for the dummy
+        pLocalInput->m_Hook = 1; 
+        pDummyInput->m_Fire = 1;
 
         if (s_HoverTimer >= activeDuration)
         {
             s_HoverTimer = 0.0f;
-            s_ActivePhase = false;  // Switch to wait phase
+            s_ActivePhase = false; 
         }
     }
     else
     {
-        pLocalInput->m_Hook = 0;      // No hook for main player
-        pDummyInput->m_Fire = 0;      // No fire for dummy
+        pLocalInput->m_Hook = 0;
+        pDummyInput->m_Fire = 0;
 
         if (s_HoverTimer >= waitDuration)
         {
             s_HoverTimer = 0.0f;
-            s_ActivePhase = true;   // Switch to active phase
+            s_ActivePhase = true;
         }
     }
-}
+}*/
 
 
 

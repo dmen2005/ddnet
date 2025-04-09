@@ -477,7 +477,6 @@ void CCamera::ConSetViewRelative(IConsole::IResult *pResult, void *pUserData)
 	pSelf->SetView(ivec2(pResult->GetInteger(0), pResult->GetInteger(1)), true);
 }
 
-//dmen later
 void CCamera::ConGotoSwitch(IConsole::IResult *pResult, void *pUserData)
 {
 	CCamera *pSelf = (CCamera *)pUserData;

@@ -531,7 +531,58 @@ int CGameClient::OnSnapInput(int *pData, bool Dummy, bool Force)
 			m_DummyInput.m_TargetX = (int)Dir.x;
 			m_DummyInput.m_TargetY = (int)Dir.y;
 		}
-		
+
+		if (g_Config.m_ClHook)
+		{
+			if(m_DummyFire % 50 != 0)
+			{
+				m_DummyFire++;
+				return 0;
+			}
+			m_DummyFire++;
+	
+			if (m_Dummyhook == 10) 
+			{
+				m_HammerInput.m_Hook = 0;
+				m_Dummyhook = 0;
+			} 
+			else 
+			{
+				m_HammerInput.m_Hook = 1; 
+				m_Dummyhook++;
+			}
+	
+			const vec2 Dir = m_LocalCharacterPos - m_aClients[m_aLocalIds[!g_Config.m_ClDummy]].m_Predicted.m_Pos;
+			m_HammerInput.m_TargetX = (int)Dir.x;
+			m_HammerInput.m_TargetY = (int)Dir.y;
+					
+			mem_copy(pData, &m_HammerInput, sizeof(m_HammerInput));
+			return sizeof(m_HammerInput);
+		}
+
+		if (g_Config.m_ClShoot)
+		{
+			if(m_DummyFire % 25 != 0)
+			{
+				m_DummyFire++;
+				return 0;
+			}
+			m_DummyFire++;
+	
+			m_HammerInput.m_Fire = (m_HammerInput.m_Fire + 1) | 1;
+			m_HammerInput.m_WantedWeapon = WEAPON_GUN + 1;
+			if(!g_Config.m_ClDummyRestoreWeapon)
+			{
+				m_DummyInput.m_WantedWeapon = WEAPON_GUN + 1;
+			}
+	
+			const vec2 Dir = m_LocalCharacterPos - m_aClients[m_aLocalIds[!g_Config.m_ClDummy]].m_Predicted.m_Pos;
+			m_HammerInput.m_TargetX = (int)Dir.x;
+			m_HammerInput.m_TargetY = (int)Dir.y;
+					
+			mem_copy(pData, &m_HammerInput, sizeof(m_HammerInput));
+			return sizeof(m_HammerInput);
+		}
 		mem_copy(pData, &m_DummyInput, sizeof(m_DummyInput));
 		return sizeof(m_DummyInput);
 	}

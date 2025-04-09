@@ -730,6 +730,8 @@ bool CClient::DummyConnectingDelayed() const
 
 void CClient::DummyConnect()
 {
+
+	
 	if(m_aNetClient[CONN_MAIN].State() != NETSTATE_ONLINE)
 	{
 		log_info("client", "Not online.");
