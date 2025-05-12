@@ -233,8 +233,16 @@ void CGameContext::FillAntibot(CAntibotRoundData *pData)
 		CAntibotCharacterData *pChar = &pData->m_aCharacters[i];
 		for(auto &LatestInput : pChar->m_aLatestInputs)
 		{
+			LatestInput.m_Direction = 0;
 			LatestInput.m_TargetX = -1;
 			LatestInput.m_TargetY = -1;
+			LatestInput.m_Jump = -1;
+			LatestInput.m_Fire = -1;
+			LatestInput.m_Hook = -1;
+			LatestInput.m_PlayerFlags = -1;
+			LatestInput.m_WantedWeapon = -1;
+			LatestInput.m_NextWeapon = -1;
+			LatestInput.m_PrevWeapon = -1;
 		}
 		pChar->m_Alive = false;
 		pChar->m_Pause = false;
@@ -3676,8 +3684,8 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("add_map_votes", "?s[directory]", CFGFLAG_SERVER, ConAddMapVotes, this, "Automatically adds voting options for all maps");
 	Console()->Register("vote", "r['yes'|'no']", CFGFLAG_SERVER, ConVote, this, "Force a vote to yes/no");
 	Console()->Register("votes", "?i[page]", CFGFLAG_SERVER, ConVotes, this, "Show all votes (page 0 by default, 20 entries per page)");
-	Console()->Register("dump_antibot", "", CFGFLAG_SERVER, ConDumpAntibot, this, "Dumps the antibot status");
-	Console()->Register("antibot", "r[command]", CFGFLAG_SERVER, ConAntibot, this, "Sends a command to the antibot");
+	Console()->Register("dump_antibot", "", CFGFLAG_SERVER | CFGFLAG_STORE, ConDumpAntibot, this, "Dumps the antibot status");
+	Console()->Register("antibot", "r[command]", CFGFLAG_SERVER | CFGFLAG_STORE, ConAntibot, this, "Sends a command to the antibot");
 
 	Console()->Chain("sv_motd", ConchainSpecialMotdupdate, this);
 
@@ -3754,9 +3762,6 @@ void CGameContext::RegisterDDRaceCommands()
 	Console()->Register("vote_no", "", CFGFLAG_SERVER, ConVoteNo, this, "Same as \"vote no\"");
 	Console()->Register("save_dry", "", CFGFLAG_SERVER, ConDrySave, this, "Dump the current savestring");
 	Console()->Register("dump_log", "?i[seconds]", CFGFLAG_SERVER, ConDumpLog, this, "Show logs of the last i seconds");
-
-	Console()->Register("freezehammer", "v[id]", CFGFLAG_SERVER | CMDFLAG_TEST, ConFreezeHammer, this, "Gives a player Freeze Hammer");
-	Console()->Register("unfreezehammer", "v[id]", CFGFLAG_SERVER | CMDFLAG_TEST, ConUnFreezeHammer, this, "Removes Freeze Hammer from a player");
 }
 
 void CGameContext::RegisterChatCommands()

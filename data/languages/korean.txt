@@ -807,9 +807,6 @@ may cause delay
 Screen
 == 화면
 
-Use high DPI
-== 높은 DPI 사용
-
 Enable game sounds
 == 게임 소리 활성화
 
@@ -941,12 +938,6 @@ AntiPing: predict grenade paths
 
 Show other players' hook collision lines
 == 다른 플레이어의 갈고리 보조선 표시
-
-Show other players' key presses
-== 다른 플레이어의 키 입력 표시
-
-Show local player's key presses
-== 주변 플레이어의 키 입력 표시
 
 Background
 == 배경
@@ -1421,10 +1412,6 @@ Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in s
 == 초기화에 실패했습니다. 구성 폴더의 settings_ddnet.cfg에서 gfx_backend를 OpenGL 또는 Vulkan으로 변경 후 재시도하십시오.
 
 [Graphics error]
-Out of VRAM. Try removing custom assets (skins, entities, etc.), especially those with high resolution.
-== VRAM이 부족합니다. 사용자 정의 에셋(스킨, 엔티티 등), 특히 고해상도 에셋을 제거해 보십시오.
-
-[Graphics error]
 An error during command recording occurred. Try to update your GPU drivers.
 == 명령 기록 중 오류가 발생했습니다. GPU 드라이버를 업데이트해 보십시오.
 
@@ -1674,9 +1661,6 @@ Chat font size
 
 Chat width
 == 채팅 너비
-
-Show friend mark (♥) in name plates
-== 이름에 친구 기호(♥) 표시
 
 Show client IDs in name plates
 == 이름에 클라이언트 ID 표시
@@ -2134,3 +2118,90 @@ Marking
 
 Show number of spectators
 == 관전자 수 표시
+
+[Graphics error]
+Out of VRAM. Try setting 'cl_skins_loaded_max' to a lower value or remove custom assets (skins, entities, etc.), especially those with high resolution.
+== 
+
+No demo with this filename exists
+== 
+
+This name cannot be used for files and folders
+== 
+
+Map size
+== 
+
+This skin name cannot be used.
+== 
+
+Skin could not be loaded due to an error. Check the local console for details.
+== 
+
+Skin could not be found.
+== 
+
+No skins match your filter criteria
+== 
+
+[Show name plates]
+None
+== 
+
+[Show name plates]
+Own
+== 
+
+[Show name plates]
+Others
+== 
+
+[Show name plates]
+All
+== 
+
+Name plates offset
+== 
+
+Show friend icon in name plates
+== 
+
+Show client IDs on a seperate line
+== 
+
+Client IDs size
+== 
+
+Show players' key presses
+== 
+
+[Show players' key presses]
+None
+== 
+
+[Show players' key presses]
+Own
+== 
+
+[Show players' key presses]
+Others
+== 
+
+[Show players' key presses]
+All
+== 
+
+Preview player's name plate
+== 
+
+Preview dummy's name plate
+== 
+
+Dragger Outline Color
+== 
+
+Dragger Inner Color
+== 
+
+AntiPing: prediction margin
+== 

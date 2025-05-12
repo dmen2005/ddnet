@@ -22,7 +22,7 @@ jobs:
     - name: Prepare Linux
       run: |
         sudo apt-get update -y
-        sudo apt-get install ddnet-tools shellcheck pkg-config cmake ninja-build libfreetype6-dev libnotify-dev libsdl2-dev libsqlite3-dev libavcodec-dev libavformat-dev libavutil-dev libswresample-dev libswscale-dev libx264-dev python3-clang libvulkan-dev glslang-tools spirv-tools libglew-dev -y
+        sudo apt-get install ddnet-tools shellcheck tidy pkg-config cmake ninja-build libfreetype6-dev libnotify-dev libsdl2-dev libsqlite3-dev libavcodec-dev libavformat-dev libavutil-dev libswresample-dev libswscale-dev libx264-dev python3-clang libvulkan-dev glslang-tools spirv-tools libglew-dev -y
         rustup default stable
         pip3 install pylint
         wget https://github.com/muttleyxd/clang-tools-static-binaries/releases/download/master-46b8640/clang-format-10_linux-amd64
@@ -49,7 +49,7 @@ jobs:
     - name: Pylint
       run: |
         pylint --version
-        find . -type f -name "*.py" -not -path './ddnet-libs/*' -not -path './googletest-src/*' -print0 | xargs -0 pylint
+        find . -type f -name "*.py" -not -path './ddnet-libs/*' -not -path './googletest-src/*' -print0 | xargs -0 pylint --disable=no-else-raise,no-else-return,redefined-builtin,redefined-outer-name
 
     - name: Check header guards
       run: scripts/check_header_guards.py
@@ -65,6 +65,13 @@ jobs:
 
     - name: Check config variables
       run: scripts/check_config_variables.py
+
+    - name: Check commands & settings export
+      run: |
+        echo "<!DOCTYPE html><html><head><title></title></head><body>" > settingscommands.html
+        scripts/export_settings_commands_table.py >> settingscommands.html
+        echo "</body></html>" >> settingscommands.html
+        tidy -errors --drop-empty-elements false settingscommands.html
 
     - name: Check log error format
       run: |
@@ -94,11 +101,7 @@ jobs:
 
     - name: Build twmap tool
       run: |
-        git clone https://gitlab.com/Patiga/twmap.git/
-        cd twmap/twmap-tools
-        cargo install --locked --path=.
-        cd ../..
-        rm -rf twmap
+        cargo install twmap-tools --git https://gitlab.com/Patiga/twmap.git/ --rev 1f192def57429a1f64ddb3ac8580744476cfdf1c --locked
 
     - name: Check maps
       run: |
