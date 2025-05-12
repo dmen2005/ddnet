@@ -310,7 +310,7 @@ void CBinds::SetDefaults()
 
     Bind(KEY_W, "+toggle cl_dummy_hammer 1 0");
     Bind(KEY_S, "+fire;+toggle cl_dummy_hammer 1 0");
-    Bind(KEY_LCTRL, "cl_dummy_control 1;+toggle cl_dummy_hook 1 0");
+    Bind(KEY_CAPSLOCK, "cl_dummy_control 1;+toggle cl_dummy_hook 1 0");
 	Bind(KEY_Q,"cl_dummy_control 1;+toggle cl_dummy_jump 1 0");
     Bind(KEY_K, "toggle cl_mouse_max_distance 2 400; toggle inp_mousesens 1 75; toggle cl_show_hook_coll_own 1 2");
     Bind(KEY_MOUSE_4, "cl_dummy_control 0; toggle cl_dummy_copy_moves 0 1");
