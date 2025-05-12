@@ -637,9 +637,6 @@ Deactivate
 Welcome to DDNet
 == Välkommen till DDNet
 
-Use high DPI
-== Använd hög DPI
-
 may cause delay
 == kan orsaka fördröjning
 
@@ -865,9 +862,6 @@ Automatically create statboard csv
 Enable regular chat sound
 == Aktivera vanligt chatt ljud
 
-Show other players' key presses
-== Visa andra spelares tangent tryck
-
 Gameplay
 == Spelet
 
@@ -1088,9 +1082,6 @@ Use old chat style
 Preview
 == Förhandsvisning
 
-Show local player's key presses
-== Visa egna tangent tryck
-
 Background
 == Bakgrund
 
@@ -1124,10 +1115,6 @@ https://ddnet.org/discord
 [Graphics error]
 Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
 == Misslyckades under uppstart. Testa att ändra gfx_backend till OpenGL eller Vulkan i settings_ddnet.cfg i konfig nappen och försök igen.
-
-[Graphics error]
-Out of VRAM. Try removing custom assets (skins, entities, etc.), especially those with high resolution.
-== Slut på VRAM. Testa att ta bort assets (skins, entities, etc.), speciellt dem i hög upplösning.
 
 [Graphics error]
 An error during command recording occurred. Try to update your GPU drivers.
@@ -1790,9 +1777,6 @@ Player info change cooldown
 Always show chat
 == Visa alltid chatt
 
-Show friend mark (♥) in name plates
-== Visa kompis markering (♥) i namnskyltar
-
 Show hook strength icon indicator
 == Visa hook styrka med en ikon
 
@@ -2129,3 +2113,93 @@ allowed
 [Team status]
 required
 == krav
+
+No demo with this filename exists
+== Ingen demo med detta filnamn finns
+
+Map size
+== Map storlek
+
+Show number of spectators
+== Visa antalet åskådare
+
+[Show name plates]
+None
+== Ingen
+
+[Show name plates]
+Own
+== Egen
+
+[Show name plates]
+Others
+== Andra
+
+[Show name plates]
+All
+== Alla
+
+Name plates offset
+== Namnskylts offset
+
+Show friend icon in name plates
+== Visa kompis ikon i namnskyltar
+
+Show client IDs on a seperate line
+== Visa klient IDs på en seperat rad
+
+Client IDs size
+== Klient IDs storlek
+
+Show players' key presses
+== Visa andra spelares Knapptryckningar
+
+[Show players' key presses]
+None
+== Ingen
+
+[Show players' key presses]
+Own
+== Egen
+
+[Show players' key presses]
+Others
+== Andra
+
+[Show players' key presses]
+All
+== Alla
+
+Preview dummy's name plate
+== Förhandsvisning av namnskylt för dummy 
+
+AntiPing: prediction margin
+== AntiPing: prediction marginal
+
+[Graphics error]
+Out of VRAM. Try setting 'cl_skins_loaded_max' to a lower value or remove custom assets (skins, entities, etc.), especially those with high resolution.
+== 
+
+This name cannot be used for files and folders
+== 
+
+This skin name cannot be used.
+== 
+
+Skin could not be loaded due to an error. Check the local console for details.
+== 
+
+Skin could not be found.
+== 
+
+No skins match your filter criteria
+== 
+
+Preview player's name plate
+== 
+
+Dragger Outline Color
+== 
+
+Dragger Inner Color
+== 

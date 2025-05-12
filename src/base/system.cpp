@@ -1000,13 +1000,8 @@ const NETADDR NETADDR_ZEROED = {NETTYPE_INVALID, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 
 static void netaddr_to_sockaddr_in(const NETADDR *src, struct sockaddr_in *dest)
 {
+	dbg_assert((src->type & (NETTYPE_IPV4 | NETTYPE_WEBSOCKET_IPV4)) != 0, "Invalid address type '%d' for netaddr_to_sockaddr_in", src->type);
 	mem_zero(dest, sizeof(struct sockaddr_in));
-	if(!(src->type & NETTYPE_IPV4) && !(src->type & NETTYPE_WEBSOCKET_IPV4))
-	{
-		dbg_msg("system", "couldn't convert NETADDR of type %d to ipv4", src->type);
-		return;
-	}
-
 	dest->sin_family = AF_INET;
 	dest->sin_port = htons(src->port);
 	mem_copy(&dest->sin_addr.s_addr, src->ip, 4);
@@ -1014,13 +1009,8 @@ static void netaddr_to_sockaddr_in(const NETADDR *src, struct sockaddr_in *dest)
 
 static void netaddr_to_sockaddr_in6(const NETADDR *src, struct sockaddr_in6 *dest)
 {
+	dbg_assert((src->type & NETTYPE_IPV6) != 0, "Invalid address type '%d' for netaddr_to_sockaddr_in6", src->type);
 	mem_zero(dest, sizeof(struct sockaddr_in6));
-	if(!(src->type & NETTYPE_IPV6))
-	{
-		dbg_msg("system", "couldn't convert NETADDR of type %d to ipv6", src->type);
-		return;
-	}
-
 	dest->sin6_family = AF_INET6;
 	dest->sin6_port = htons(src->port);
 	mem_copy(&dest->sin6_addr.s6_addr, src->ip, 16);
@@ -1052,7 +1042,7 @@ static void sockaddr_to_netaddr(const struct sockaddr *src, NETADDR *dst)
 	else
 	{
 		mem_zero(dst, sizeof(struct sockaddr));
-		dbg_msg("system", "couldn't convert sockaddr of family %d", src->sa_family);
+		log_warn("net", "Cannot convert sockaddr of family %d", src->sa_family);
 	}
 }
 
@@ -1166,22 +1156,19 @@ void net_addr_str(const NETADDR *addr, char *string, int max_length, bool add_po
 	}
 	else
 	{
-		char error[64];
-		str_format(error, sizeof(error), "unknown NETADDR type %d", addr->type);
-		dbg_assert(false, error);
+		dbg_assert(false, "unknown NETADDR type %d", addr->type);
 	}
 }
 
 static int priv_net_extract(const char *hostname, char *host, int max_host, int *port)
 {
-	int i;
-
 	*port = 0;
 	host[0] = 0;
 
 	if(hostname[0] == '[')
 	{
 		// ipv6 mode
+		int i;
 		for(i = 1; i < max_host && hostname[i] && hostname[i] != ']'; i++)
 			host[i - 1] = hostname[i];
 		host[i - 1] = 0;
@@ -1195,6 +1182,7 @@ static int priv_net_extract(const char *hostname, char *host, int max_host, int 
 	else
 	{
 		// generic mode (ipv4, hostname etc)
+		int i;
 		for(i = 0; i < max_host - 1 && hostname[i] && hostname[i] != ':'; i++)
 			host[i] = hostname[i];
 		host[i] = 0;
@@ -1206,30 +1194,27 @@ static int priv_net_extract(const char *hostname, char *host, int max_host, int 
 	return 0;
 }
 
-int net_host_lookup_impl(const char *hostname, NETADDR *addr, int types)
+static int net_host_lookup_impl(const char *hostname, NETADDR *addr, int types)
 {
-	struct addrinfo hints;
-	struct addrinfo *result = nullptr;
-	int e;
 	char host[256];
 	int port = 0;
-
 	if(priv_net_extract(hostname, host, sizeof(host), &port))
 		return -1;
 
-	dbg_msg("host_lookup", "host='%s' port=%d %d", host, port, types);
+	log_trace("host_lookup", "host='%s' port='%d' types='%d'", host, port, types);
 
+	struct addrinfo hints;
 	mem_zero(&hints, sizeof(hints));
-
-	hints.ai_family = AF_UNSPEC;
 
 	if(types == NETTYPE_IPV4)
 		hints.ai_family = AF_INET;
 	else if(types == NETTYPE_IPV6)
 		hints.ai_family = AF_INET6;
+	else
+		hints.ai_family = AF_UNSPEC;
 
-	e = getaddrinfo(host, nullptr, &hints, &result);
-
+	struct addrinfo *result = nullptr;
+	int e = getaddrinfo(host, nullptr, &hints, &result);
 	if(!result)
 		return -1;
 
@@ -1468,10 +1453,9 @@ int net_addr_from_str(NETADDR *addr, const char *string)
 static void priv_net_close_socket(int sock)
 {
 #if defined(CONF_FAMILY_WINDOWS)
-	closesocket(sock);
+	dbg_assert(closesocket(sock) == 0, "closesocket failure (%s)", net_error_message().c_str());
 #else
-	if(close(sock) != 0)
-		dbg_msg("socket", "close failed: %d", errno);
+	dbg_assert(close(sock) == 0, "close failure (%s)", net_error_message().c_str());
 #endif
 }
 
@@ -1523,59 +1507,54 @@ std::string windows_format_system_message(unsigned long error)
 
 static int priv_net_create_socket(int domain, int type, struct sockaddr *addr, int sockaddrlen)
 {
-	int sock, e;
-
-	/* create socket */
-	sock = socket(domain, type, 0);
+	int sock = socket(domain, type, 0);
 	if(sock < 0)
 	{
-#if defined(CONF_FAMILY_WINDOWS)
-		int error = WSAGetLastError();
-		const std::string message = windows_format_system_message(error);
-		dbg_msg("net", "failed to create socket with domain %d and type %d (%d '%s')", domain, type, error, message.c_str());
-#else
-		dbg_msg("net", "failed to create socket with domain %d and type %d (%d '%s')", domain, type, errno, strerror(errno));
-#endif
+		log_error("net", "Failed to create socket with domain %d and type %d (%s)", domain, type, net_error_message().c_str());
 		return -1;
 	}
 
 #if defined(CONF_FAMILY_UNIX)
-	/* on tcp sockets set SO_REUSEADDR
-		to fix port rebind on restart */
+	// On TCP sockets set SO_REUSEADDR to fix port rebind on restart
 	if(domain == AF_INET && type == SOCK_STREAM)
 	{
-		int option = 1;
-		if(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option)) != 0)
-			dbg_msg("socket", "Setting SO_REUSEADDR failed: %d", errno);
+		int reuse_addr = 1;
+		if(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (const char *)&reuse_addr, sizeof(reuse_addr)) != 0)
+		{
+			log_error("net", "Setting SO_REUSEADDR failed with domain %d and type %d (%s)", domain, type, net_error_message().c_str());
+		}
+	}
+#elif defined(CONF_FAMILY_WINDOWS)
+	{
+		// Ensure exclusive use of address, otherwise it's possible on Windows to bind to the same address and port with another socket.
+		// See https://learn.microsoft.com/en-us/windows/win32/winsock/using-so-reuseaddr-and-so-exclusiveaddruse (last update 06/14/2022)
+		int exclusive_addr_use = 1;
+		if(setsockopt(sock, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, (const char *)&exclusive_addr_use, sizeof(exclusive_addr_use)) != 0)
+		{
+			log_error("net", "Setting SO_EXCLUSIVEADDRUSE failed with domain %d and type %d (%s)", domain, type, net_error_message().c_str());
+		}
 	}
 #endif
 
-	/* set to IPv6 only if that's what we are creating */
-#if defined(IPV6_V6ONLY) /* windows sdk 6.1 and higher */
+	// Set to IPv6-only if that's what we are creating, to ensure that dual-stack does not block the same IPv4 port.
+#if defined(IPV6_V6ONLY)
 	if(domain == AF_INET6)
 	{
 		int ipv6only = 1;
 		if(setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (const char *)&ipv6only, sizeof(ipv6only)) != 0)
-			dbg_msg("socket", "Setting V6ONLY failed: %d", errno);
+		{
+			log_error("net", "Setting IPV6_V6ONLY failed with domain %d and type %d (%s)", domain, type, net_error_message().c_str());
+		}
 	}
 #endif
 
-	/* bind the socket */
-	e = bind(sock, addr, sockaddrlen);
-	if(e != 0)
+	if(bind(sock, addr, sockaddrlen) != 0)
 	{
-#if defined(CONF_FAMILY_WINDOWS)
-		int error = WSAGetLastError();
-		const std::string message = windows_format_system_message(error);
-		dbg_msg("net", "failed to bind socket with domain %d and type %d (%d '%s')", domain, type, error, message.c_str());
-#else
-		dbg_msg("net", "failed to bind socket with domain %d and type %d (%d '%s')", domain, type, errno, strerror(errno));
-#endif
+		log_error("net", "Failed to bind socket with domain %d and type %d (%s)", domain, type, net_error_message().c_str());
 		priv_net_close_socket(sock);
 		return -1;
 	}
 
-	/* return the newly created socket */
 	return sock;
 }
 
@@ -1601,19 +1580,21 @@ NETSOCKET net_udp_create(NETADDR bindaddr)
 			sock->type |= NETTYPE_IPV4;
 			sock->ipv4sock = socket;
 
-			/* set broadcast */
-			int broadcast = 1;
-			if(setsockopt(socket, SOL_SOCKET, SO_BROADCAST, (const char *)&broadcast, sizeof(broadcast)) != 0)
+			// Set broadcast
 			{
-				dbg_msg("socket", "Setting BROADCAST on ipv4 failed: %d", net_errno());
+				int broadcast = 1;
+				if(setsockopt(socket, SOL_SOCKET, SO_BROADCAST, (const char *)&broadcast, sizeof(broadcast)) != 0)
+				{
+					log_error("net", "Setting SO_BROADCAST on IPv4 failed (%s)", net_error_message().c_str());
+				}
 			}
 
+			// Set DSCP/TOS
 			{
-				/* set DSCP/TOS */
-				int iptos = 0x10 /* IPTOS_LOWDELAY */;
-				if(setsockopt(socket, IPPROTO_IP, IP_TOS, (char *)&iptos, sizeof(iptos)) != 0)
+				int iptos = 0x10; // IPTOS_LOWDELAY
+				if(setsockopt(socket, IPPROTO_IP, IP_TOS, (const char *)&iptos, sizeof(iptos)) != 0)
 				{
-					dbg_msg("socket", "Setting TOS on ipv4 failed: %d", net_errno());
+					log_error("net", "Setting IP_TOS on IPv4 failed (%s)", net_error_message().c_str());
 				}
 			}
 		}
@@ -1647,21 +1628,23 @@ NETSOCKET net_udp_create(NETADDR bindaddr)
 			sock->type |= NETTYPE_IPV6;
 			sock->ipv6sock = socket;
 
-			/* set broadcast */
-			int broadcast = 1;
-			if(setsockopt(socket, SOL_SOCKET, SO_BROADCAST, (const char *)&broadcast, sizeof(broadcast)) != 0)
+			// Set broadcast
 			{
-				dbg_msg("socket", "Setting BROADCAST on ipv6 failed: %d", net_errno());
+				int broadcast = 1;
+				if(setsockopt(socket, SOL_SOCKET, SO_BROADCAST, (const char *)&broadcast, sizeof(broadcast)) != 0)
+				{
+					log_error("net", "Setting SO_BROADCAST on IPv6 failed (%s)", net_error_message().c_str());
+				}
 			}
 
+			// Set DSCP/TOS
 			// TODO: setting IP_TOS on ipv6 with setsockopt is not supported on Windows, see https://github.com/ddnet/ddnet/issues/7605
 #if !defined(CONF_FAMILY_WINDOWS)
 			{
-				/* set DSCP/TOS */
-				int iptos = 0x10 /* IPTOS_LOWDELAY */;
-				if(setsockopt(socket, IPPROTO_IP, IP_TOS, (char *)&iptos, sizeof(iptos)) != 0)
+				int iptos = 0x10; // IPTOS_LOWDELAY
+				if(setsockopt(socket, IPPROTO_IP, IP_TOS, (const char *)&iptos, sizeof(iptos)) != 0)
 				{
-					dbg_msg("socket", "Setting TOS on ipv6 failed: %d", net_errno());
+					log_error("net", "Setting IP_TOS on IPv6 failed (%s)", net_error_message().c_str());
 				}
 			}
 #endif
@@ -1704,7 +1687,9 @@ int net_udp_send(NETSOCKET sock, const NETADDR *addr, const void *data, int size
 			d = sendto((int)sock->ipv4sock, (const char *)data, size, 0, (struct sockaddr *)&sa, sizeof(sa));
 		}
 		else
-			dbg_msg("net", "can't send ipv4 traffic to this socket");
+		{
+			log_error("net", "Cannot send IPv4 traffic to this socket");
+		}
 	}
 
 #if defined(CONF_WEBSOCKETS)
@@ -1718,7 +1703,7 @@ int net_udp_send(NETSOCKET sock, const NETADDR *addr, const void *data, int size
 		}
 
 		else
-			dbg_msg("net", "can't send websocket_ipv4 traffic to this socket");
+			log_error("net", "Cannot send Websocket IPv4 traffic to this socket");
 	}
 #endif
 
@@ -1742,24 +1727,9 @@ int net_udp_send(NETSOCKET sock, const NETADDR *addr, const void *data, int size
 			d = sendto((int)sock->ipv6sock, (const char *)data, size, 0, (struct sockaddr *)&sa, sizeof(sa));
 		}
 		else
-			dbg_msg("net", "can't send ipv6 traffic to this socket");
+			log_error("net", "Cannot send IPv6 traffic to this socket");
 	}
-	/*
-	else
-		dbg_msg("net", "can't send to network of type %d", addr->type);
-		*/
 
-	/*if(d < 0)
-	{
-		char addrstr[256];
-		net_addr_str(addr, addrstr, sizeof(addrstr));
-
-		dbg_msg("net", "sendto error (%d '%s')", errno, strerror(errno));
-		dbg_msg("net", "\tsock = %d %x", sock, sock);
-		dbg_msg("net", "\tsize = %d %x", size, size);
-		dbg_msg("net", "\taddr = %s", addrstr);
-
-	}*/
 	network_stats.sent_bytes += size;
 	network_stats.sent_packets++;
 	return d;
@@ -1768,13 +1738,12 @@ int net_udp_send(NETSOCKET sock, const NETADDR *addr, const void *data, int size
 void net_buffer_init(NETSOCKET_BUFFER *buffer)
 {
 #if defined(CONF_PLATFORM_LINUX)
-	int i;
 	buffer->pos = 0;
 	buffer->size = 0;
 	mem_zero(buffer->msgs, sizeof(buffer->msgs));
 	mem_zero(buffer->iovecs, sizeof(buffer->iovecs));
 	mem_zero(buffer->sockaddrs, sizeof(buffer->sockaddrs));
-	for(i = 0; i < VLEN; ++i)
+	for(int i = 0; i < VLEN; ++i)
 	{
 		buffer->iovecs[i].iov_base = buffer->bufs[i];
 		buffer->iovecs[i].iov_len = PACKETSIZE;
@@ -1937,19 +1906,22 @@ static int net_set_blocking_impl(NETSOCKET sock, bool blocking)
 	unsigned long mode = blocking ? 0 : 1;
 	const char *mode_str = blocking ? "blocking" : "non-blocking";
 	int sockets[] = {sock->ipv4sock, sock->ipv6sock};
-	const char *socket_str[] = {"ipv4", "ipv6"};
+	const char *socket_str[] = {"IPv4", "IPv6"};
 
 	for(size_t i = 0; i < std::size(sockets); ++i)
 	{
 		if(sockets[i] >= 0)
 		{
 #if defined(CONF_FAMILY_WINDOWS)
-			int result = ioctlsocket(sockets[i], FIONBIO, (unsigned long *)&mode);
-			if(result != NO_ERROR)
-				dbg_msg("socket", "setting %s %s failed: %d", socket_str[i], mode_str, result);
+			if(ioctlsocket(sockets[i], FIONBIO, (unsigned long *)&mode) != NO_ERROR)
+			{
+				log_error("net", "Setting %s mode for %s socket failed (%s)", socket_str[i], mode_str, net_error_message().c_str());
+			}
 #else
 			if(ioctl(sockets[i], FIONBIO, (unsigned long *)&mode) == -1)
-				dbg_msg("socket", "setting %s %s failed: %d", socket_str[i], mode_str, errno);
+			{
+				log_error("net", "Setting %s mode for %s socket failed (%s)", socket_str[i], mode_str, net_error_message().c_str());
+			}
 #endif
 		}
 	}
@@ -1979,18 +1951,14 @@ int net_tcp_listen(NETSOCKET sock, int backlog)
 
 int net_tcp_accept(NETSOCKET sock, NETSOCKET *new_sock, NETADDR *a)
 {
-	int s;
-	socklen_t sockaddr_len;
-
 	*new_sock = nullptr;
 
 	if(sock->ipv4sock >= 0)
 	{
 		struct sockaddr_in addr;
-		sockaddr_len = sizeof(addr);
+		socklen_t sockaddr_len = sizeof(addr);
 
-		s = accept(sock->ipv4sock, (struct sockaddr *)&addr, &sockaddr_len);
-
+		int s = accept(sock->ipv4sock, (struct sockaddr *)&addr, &sockaddr_len);
 		if(s != -1)
 		{
 			sockaddr_to_netaddr((const struct sockaddr *)&addr, a);
@@ -2006,10 +1974,9 @@ int net_tcp_accept(NETSOCKET sock, NETSOCKET *new_sock, NETADDR *a)
 	if(sock->ipv6sock >= 0)
 	{
 		struct sockaddr_in6 addr;
-		sockaddr_len = sizeof(addr);
+		socklen_t sockaddr_len = sizeof(addr);
 
-		s = accept(sock->ipv6sock, (struct sockaddr *)&addr, &sockaddr_len);
-
+		int s = accept(sock->ipv6sock, (struct sockaddr *)&addr, &sockaddr_len);
 		if(s != -1)
 		{
 			*new_sock = (NETSOCKET_INTERNAL *)malloc(sizeof(**new_sock));
@@ -2028,19 +1995,19 @@ int net_tcp_connect(NETSOCKET sock, const NETADDR *a)
 {
 	if(a->type & NETTYPE_IPV4)
 	{
-		struct sockaddr_in addr;
-		netaddr_to_sockaddr_in(a, &addr);
 		if(sock->ipv4sock < 0)
 			return -2;
+		struct sockaddr_in addr;
+		netaddr_to_sockaddr_in(a, &addr);
 		return connect(sock->ipv4sock, (struct sockaddr *)&addr, sizeof(addr));
 	}
 
 	if(a->type & NETTYPE_IPV6)
 	{
-		struct sockaddr_in6 addr;
-		netaddr_to_sockaddr_in6(a, &addr);
 		if(sock->ipv6sock < 0)
 			return -2;
+		struct sockaddr_in6 addr;
+		netaddr_to_sockaddr_in6(a, &addr);
 		return connect(sock->ipv6sock, (struct sockaddr *)&addr, sizeof(addr));
 	}
 
@@ -2049,12 +2016,9 @@ int net_tcp_connect(NETSOCKET sock, const NETADDR *a)
 
 int net_tcp_connect_non_blocking(NETSOCKET sock, NETADDR bindaddr)
 {
-	int res = 0;
-
 	net_set_non_blocking(sock);
-	res = net_tcp_connect(sock, &bindaddr);
+	int res = net_tcp_connect(sock, &bindaddr);
 	net_set_blocking(sock);
-
 	return res;
 }
 
@@ -2096,6 +2060,17 @@ int net_errno()
 #endif
 }
 
+std::string net_error_message()
+{
+	const int error = net_errno();
+#if defined(CONF_FAMILY_WINDOWS)
+	const std::string message = windows_format_system_message(error);
+	return std::to_string(error) + " '" + message + "'";
+#else
+	return std::to_string(error) + " '" + strerror(error) + "'";
+#endif
+}
+
 int net_would_block()
 {
 #if defined(CONF_FAMILY_WINDOWS)
@@ -2109,7 +2084,7 @@ void net_init()
 {
 #if defined(CONF_FAMILY_WINDOWS)
 	WSADATA wsa_data;
-	dbg_assert(WSAStartup(MAKEWORD(1, 1), &wsa_data) == 0, "network initialization failed.");
+	dbg_assert(WSAStartup(MAKEWORD(1, 1), &wsa_data) == 0, "WSAStartup failure");
 #endif
 }
 
@@ -2598,15 +2573,9 @@ void swap_endian(void *data, unsigned elem_size, unsigned num)
 
 int net_socket_read_wait(NETSOCKET sock, int time)
 {
-	struct timeval tv;
 	fd_set readfds;
-	int sockid;
-
-	tv.tv_sec = time / 1000000;
-	tv.tv_usec = time % 1000000;
-	sockid = 0;
-
 	FD_ZERO(&readfds);
+	int sockid = 0;
 	if(sock->ipv4sock >= 0)
 	{
 		FD_SET(sock->ipv4sock, &readfds);
@@ -2632,9 +2601,16 @@ int net_socket_read_wait(NETSOCKET sock, int time)
 
 	/* don't care about writefds and exceptfds */
 	if(time < 0)
+	{
 		select(sockid + 1, &readfds, nullptr, nullptr, nullptr);
+	}
 	else
+	{
+		struct timeval tv;
+		tv.tv_sec = time / 1000000;
+		tv.tv_usec = time % 1000000;
 		select(sockid + 1, &readfds, nullptr, nullptr, &tv);
+	}
 
 	if(sock->ipv4sock >= 0 && FD_ISSET(sock->ipv4sock, &readfds))
 		return 1;
@@ -2896,10 +2872,80 @@ void str_sanitize_filename(char *str_in)
 	unsigned char *str = (unsigned char *)str_in;
 	while(*str)
 	{
-		if(*str < 32 || *str == '\\' || *str == '/' || *str == '|' || *str == ':' || *str == '*' || *str == '?' || *str == '<' || *str == '>' || *str == '"')
+		if(*str <= 0x1F || *str == 0x7F || *str == '\\' || *str == '/' || *str == '|' || *str == ':' ||
+			*str == '*' || *str == '?' || *str == '<' || *str == '>' || *str == '"')
+		{
 			*str = ' ';
+		}
 		str++;
 	}
+}
+
+bool str_valid_filename(const char *str)
+{
+	// References:
+	// - https://en.wikipedia.org/w/index.php?title=Filename&oldid=1281340521#Comparison_of_filename_limitations
+	// - https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file (last update 2024-08-28)
+	if(str[0] == '\0')
+	{
+		return false; // empty name not allowed
+	}
+
+	bool prev_space = false;
+	bool prev_period = false;
+	bool first_space_checked = false;
+	const char *iterator = str;
+	while(*iterator)
+	{
+		const int code = str_utf8_decode(&iterator);
+		if(code <= 0x1F || code == 0x7F || code == '\\' || code == '/' || code == '|' || code == ':' ||
+			code == '*' || code == '?' || code == '<' || code == '>' || code == '"')
+		{
+			return false; // disallowed characters, mostly for Windows
+		}
+		else if(str_utf8_isspace(code) && code != ' ')
+		{
+			return false; // we only allow regular space characters
+		}
+		if(code == ' ')
+		{
+			if(!first_space_checked)
+			{
+				return false; // leading spaces not allowed
+			}
+			if(prev_space)
+			{
+				return false; // multiple consecutive spaces not allowed
+			}
+			prev_space = true;
+			prev_period = false;
+		}
+		else
+		{
+			prev_space = false;
+			prev_period = code == '.';
+			first_space_checked = true;
+		}
+	}
+	if(prev_space || prev_period)
+	{
+		return false; // trailing spaces and periods not allowed
+	}
+
+	static constexpr const char *RESERVED_NAMES[] = {
+		"CON", "PRN", "AUX", "NUL",
+		"COM0", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "COM¹", "COM²", "COM³",
+		"LPT0", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9", "LPT¹", "LPT²", "LPT³"};
+	for(const char *reserved_name : RESERVED_NAMES)
+	{
+		const char *prefix = str_startswith_nocase(str, reserved_name);
+		if(prefix != nullptr && (prefix[0] == '\0' || prefix[0] == '.'))
+		{
+			return false; // reserved name not allowed when it makes up the entire filename or when followed by period
+		}
+	}
+
+	return true;
 }
 
 /* removes leading and trailing spaces and limits the use of multiple spaces */
@@ -3718,6 +3764,24 @@ bool str_tofloat(const char *str, float *out)
 	return true;
 }
 
+void str_utf8_tolower(const char *input, char *output, size_t size)
+{
+	size_t out_pos = 0;
+	while(*input)
+	{
+		const int code = str_utf8_tolower_codepoint(str_utf8_decode(&input));
+		char encoded_code[4];
+		const int code_size = str_utf8_encode(encoded_code, code);
+		if(out_pos + code_size + 1 > size) // +1 for null termination
+		{
+			break;
+		}
+		mem_copy(&output[out_pos], encoded_code, code_size);
+		out_pos += code_size;
+	}
+	output[out_pos] = '\0';
+}
+
 int str_utf8_comp_nocase(const char *a, const char *b)
 {
 	int code_a;
@@ -3725,8 +3789,8 @@ int str_utf8_comp_nocase(const char *a, const char *b)
 
 	while(*a && *b)
 	{
-		code_a = str_utf8_tolower(str_utf8_decode(&a));
-		code_b = str_utf8_tolower(str_utf8_decode(&b));
+		code_a = str_utf8_tolower_codepoint(str_utf8_decode(&a));
+		code_b = str_utf8_tolower_codepoint(str_utf8_decode(&b));
 
 		if(code_a != code_b)
 			return code_a - code_b;
@@ -3745,8 +3809,8 @@ int str_utf8_comp_nocase_num(const char *a, const char *b, int num)
 
 	while(*a && *b)
 	{
-		code_a = str_utf8_tolower(str_utf8_decode(&a));
-		code_b = str_utf8_tolower(str_utf8_decode(&b));
+		code_a = str_utf8_tolower_codepoint(str_utf8_decode(&a));
+		code_b = str_utf8_tolower_codepoint(str_utf8_decode(&b));
 
 		if(code_a != code_b)
 			return code_a - code_b;
@@ -3766,7 +3830,7 @@ const char *str_utf8_find_nocase(const char *haystack, const char *needle, const
 		const char *b = needle;
 		const char *a_next = a;
 		const char *b_next = b;
-		while(*a && *b && str_utf8_tolower(str_utf8_decode(&a_next)) == str_utf8_tolower(str_utf8_decode(&b_next)))
+		while(*a && *b && str_utf8_tolower_codepoint(str_utf8_decode(&a_next)) == str_utf8_tolower_codepoint(str_utf8_decode(&b_next)))
 		{
 			a = a_next;
 			b = b_next;
@@ -4716,58 +4780,6 @@ void os_locale_str(char *locale, size_t length)
 	if(locale[0] == '\0' || str_comp(locale, "C") == 0 || str_comp(locale, "POSIX") == 0)
 		str_copy(locale, "en-US", length);
 }
-
-#if defined(CONF_EXCEPTION_HANDLING)
-#if defined(CONF_FAMILY_WINDOWS)
-static HMODULE exception_handling_module = nullptr;
-#endif
-
-void init_exception_handler()
-{
-#if defined(CONF_FAMILY_WINDOWS)
-	const char *module_name = "exchndl.dll";
-	exception_handling_module = LoadLibraryA(module_name);
-	if(exception_handling_module == nullptr)
-	{
-		const DWORD LastError = GetLastError();
-		const std::string ErrorMsg = windows_format_system_message(LastError);
-		dbg_msg("exception_handling", "failed to load exception handling library '%s' (error %ld %s)", module_name, LastError, ErrorMsg.c_str());
-	}
-#else
-#error exception handling not implemented
-#endif
-}
-
-void set_exception_handler_log_file(const char *log_file_path)
-{
-#if defined(CONF_FAMILY_WINDOWS)
-	if(exception_handling_module != nullptr)
-	{
-		const std::wstring wide_log_file_path = windows_utf8_to_wide(log_file_path);
-		// Intentional
-#ifdef __MINGW32__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-function-type"
-#endif
-		const char *function_name = "ExcHndlSetLogFileNameW";
-		auto exception_log_file_path_func = (BOOL(APIENTRY *)(const WCHAR *))(GetProcAddress(exception_handling_module, function_name));
-#ifdef __MINGW32__
-#pragma GCC diagnostic pop
-#endif
-		if(exception_log_file_path_func == nullptr)
-		{
-			const DWORD LastError = GetLastError();
-			const std::string ErrorMsg = windows_format_system_message(LastError);
-			dbg_msg("exception_handling", "could not find function '%s' in exception handling library (error %ld %s)", function_name, LastError, ErrorMsg.c_str());
-		}
-		else
-			exception_log_file_path_func(wide_log_file_path.c_str());
-	}
-#else
-#error exception handling not implemented
-#endif
-}
-#endif
 
 std::chrono::nanoseconds time_get_nanoseconds()
 {

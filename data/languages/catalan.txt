@@ -618,9 +618,6 @@ Frags
 AntiPing: predict other players
 == AntiPing: Predir altres jugadors
 
-Show other players' key presses
-== Mostrar les tecles premudes d'altres jugadors
-
 Automatically take statboard screenshot
 == Fer una foto de la taula d'estadístiques automàticament
 
@@ -885,9 +882,6 @@ Show entities
 Show HUD
 == Mostrar el HUD
 
-Use high DPI
-== Fer servir alt DPI
-
 Default length
 == Llargada predeterminada
 
@@ -1032,9 +1026,6 @@ Client message
 Preview
 == Vista prèvia
 
-Show local player's key presses
-== Mostrar les tecles premudes del jugador local
-
 Background
 == Fons
 
@@ -1147,12 +1138,16 @@ Tutorial
 Can't find a Tutorial server
 == No s'ha pogut trobar un servidor del tutorial
 
+[Translation credits: Add your own name here when you update translations]
+English translation by the DDNet Team
+== Catalan translation by Ryozuki
+
 [Graphics error]
 Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
 == 
 
 [Graphics error]
-Out of VRAM. Try removing custom assets (skins, entities, etc.), especially those with high resolution.
+Out of VRAM. Try setting 'cl_skins_loaded_max' to a lower value or remove custom assets (skins, entities, etc.), especially those with high resolution.
 == 
 
 [Graphics error]
@@ -1205,6 +1200,9 @@ Saving settings to '%s' failed
 == 
 
 Error saving settings
+== 
+
+No demo with this filename exists
 == 
 
 "%s" is not compatible with pnglite and cannot be loaded by old DDNet versions:
@@ -1370,6 +1368,9 @@ There's an unsaved map in the editor, you might want to save it.
 Continue anyway?
 == 
 
+This name cannot be used for files and folders
+== 
+
 A demo with this name already exists
 == 
 
@@ -1391,10 +1392,10 @@ Videos directory
 Video was saved to '%s'
 == 
 
-Unable to save the skin
+Unable to save the skin with a reserved name
 == 
 
-Unable to save the skin with a reserved name
+Unable to save the skin
 == 
 
 Trying to determine UDP connectivity…
@@ -1572,6 +1573,9 @@ Created
 == 
 
 Netversion
+== 
+
+Map size
 == 
 
 [Demo details]
@@ -1758,10 +1762,22 @@ Player info change cooldown
 Download community skins
 == 
 
+This skin name cannot be used.
+== 
+
+Skin could not be loaded due to an error. Check the local console for details.
+== 
+
+Skin could not be found.
+== 
+
 Create a random skin
 == 
 
 Choose default eyes when joining a server
+== 
+
+No skins match your filter criteria
 == 
 
 Open the directory to add custom skins
@@ -1835,10 +1851,6 @@ Renders your frame rate in the top right
 Graphics card
 == 
 
-[Translation credits: Add your own name here when you update translations]
-English translation by the DDNet Team
-== Catalan translation by Ryozuki
-
 Tee
 == 
 
@@ -1881,6 +1893,9 @@ Show DDRace HUD
 Show jumps indicator
 == 
 
+Show number of spectators
+== 
+
 Show dummy actions
 == 
 
@@ -1911,10 +1926,35 @@ Chat font size
 Chat width
 == 
 
-Show friend mark (♥) in name plates
+[Show name plates]
+None
+== 
+
+[Show name plates]
+Own
+== 
+
+[Show name plates]
+Others
+== 
+
+[Show name plates]
+All
+== 
+
+Name plates offset
+== 
+
+Show friend icon in name plates
 == 
 
 Show client IDs in name plates
+== 
+
+Show client IDs on a seperate line
+== 
+
+Client IDs size
 == 
 
 Hook Strength
@@ -1932,7 +1972,32 @@ Size of hook strength icon and number indicator
 Key Presses
 == 
 
+Show players' key presses
+== 
+
+[Show players' key presses]
+None
+== 
+
+[Show players' key presses]
+Own
+== 
+
+[Show players' key presses]
+Others
+== 
+
+[Show players' key presses]
+All
+== 
+
 Size of key press icons
+== 
+
+Preview player's name plate
+== 
+
+Preview dummy's name plate
 == 
 
 Hook collision line
@@ -2010,6 +2075,12 @@ Freeze Laser Outline Color
 Freeze Laser Inner Color
 == 
 
+Dragger Outline Color
+== 
+
+Dragger Inner Color
+== 
+
 Set all to Rifle
 == 
 
@@ -2032,6 +2103,9 @@ Quads are used for background decoration
 == 
 
 Tries to predict other entities to give a feel of low latency
+== 
+
+AntiPing: prediction margin
 == 
 
 Regular background color

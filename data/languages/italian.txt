@@ -801,9 +801,6 @@ may cause delay
 Screen
 == Schermo
 
-Use high DPI
-== Usa DPI alti
-
 Enable game sounds
 == Abilita suoni del gioco
 
@@ -932,9 +929,6 @@ AntiPing: predict grenade paths
 
 Show other players' hook collision lines
 == Mostra la linea di collisione del rampino degli altri giocatori
-
-Show other players' key presses
-== Mostra i tasti degli altri giocatori
 
 Use current map as background
 == Usa la mappa attuale come sfondo
@@ -1272,9 +1266,6 @@ Opacity of freeze bars inside freeze
 Preview
 == Anteprima
 
-Show local player's key presses
-== Mostra le pressioni dei tasti del giocatore locale
-
 Hook collision line
 == Hook line collisione
 
@@ -1341,12 +1332,16 @@ Loading sound files
 Moved ingame
 == Spostato in gioco
 
+[Translation credits: Add your own name here when you update translations]
+English translation by the DDNet Team
+== Italian translation by Lanta, Carmine, Otacon, Apmox, NeXus and kio
+
 [Graphics error]
 Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
 == 
 
 [Graphics error]
-Out of VRAM. Try removing custom assets (skins, entities, etc.), especially those with high resolution.
+Out of VRAM. Try setting 'cl_skins_loaded_max' to a lower value or remove custom assets (skins, entities, etc.), especially those with high resolution.
 == 
 
 [Graphics error]
@@ -1399,6 +1394,9 @@ Saving settings to '%s' failed
 == 
 
 Error saving settings
+== 
+
+No demo with this filename exists
 == 
 
 The width of texture %s is not divisible by %d, or the height is not divisible by %d, which might cause visual bugs.
@@ -1522,16 +1520,19 @@ There's an unsaved map in the editor, you might want to save it.
 Continue anyway?
 == 
 
+This name cannot be used for files and folders
+== 
+
 Videos directory
 == 
 
 Video was saved to '%s'
 == 
 
-Unable to save the skin
+Unable to save the skin with a reserved name
 == 
 
-Unable to save the skin with a reserved name
+Unable to save the skin
 == 
 
 %d/%d KiB (%.1f KiB/s)
@@ -1690,17 +1691,20 @@ Folder Link
 Created
 == 
 
-Netversion
-== 
-
-[Demo details]
-map not included
-== 
-
 %.2f MiB
 == 
 
 %.2f KiB
+== 
+
+Netversion
+== 
+
+Map size
+== 
+
+[Demo details]
+map not included
 == 
 
 Open the directory that contains the demo files
@@ -1886,6 +1890,18 @@ Dummy
 Player info change cooldown
 == 
 
+This skin name cannot be used.
+== 
+
+Skin could not be loaded due to an error. Check the local console for details.
+== 
+
+Skin could not be found.
+== 
+
+No skins match your filter criteria
+== 
+
 Converse
 == 
 
@@ -1935,10 +1951,6 @@ custom
 auto
 == 
 
-[Translation credits: Add your own name here when you update translations]
-English translation by the DDNet Team
-== Italian translation by Lanta, Carmine, Otacon, Apmox, NeXus and kio
-
 Tee
 == 
 
@@ -1969,6 +1981,9 @@ DDRace HUD
 Show client IDs (scoreboard, chat, spectator)
 == 
 
+Show number of spectators
+== 
+
 Always show chat
 == 
 
@@ -1981,10 +1996,35 @@ Chat font size
 Chat width
 == 
 
-Show friend mark (♥) in name plates
+[Show name plates]
+None
+== 
+
+[Show name plates]
+Own
+== 
+
+[Show name plates]
+Others
+== 
+
+[Show name plates]
+All
+== 
+
+Name plates offset
+== 
+
+Show friend icon in name plates
 == 
 
 Show client IDs in name plates
+== 
+
+Show client IDs on a seperate line
+== 
+
+Client IDs size
 == 
 
 Hook Strength
@@ -2002,7 +2042,32 @@ Size of hook strength icon and number indicator
 Key Presses
 == 
 
+Show players' key presses
+== 
+
+[Show players' key presses]
+None
+== 
+
+[Show players' key presses]
+Own
+== 
+
+[Show players' key presses]
+Others
+== 
+
+[Show players' key presses]
+All
+== 
+
 Size of key press icons
+== 
+
+Preview player's name plate
+== 
+
+Preview dummy's name plate
 == 
 
 Show own player's hook collision line
@@ -2059,6 +2124,12 @@ Freeze Laser Outline Color
 Freeze Laser Inner Color
 == 
 
+Dragger Outline Color
+== 
+
+Dragger Inner Color
+== 
+
 Set all to Rifle
 == 
 
@@ -2069,6 +2140,9 @@ Only save improvements
 == 
 
 Overlay entities
+== 
+
+AntiPing: prediction margin
 == 
 
 Regular background color
