@@ -69,7 +69,6 @@ public:
 	 * @return converted zoom value
 	 **/
 	static inline float ZoomStepsToValue(float Steps) { return std::pow(CCamera::ZOOM_STEP, Steps); }
-
 	vec2 m_Center;
 	bool m_ZoomSet;
 	bool m_Zooming;

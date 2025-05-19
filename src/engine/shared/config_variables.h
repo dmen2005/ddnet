@@ -4,7 +4,6 @@
 // This file can be included several times.
 
 #ifndef MACRO_CONFIG_INT
-#error "The config macros must be defined"
 #define MACRO_CONFIG_INT(Name, ScriptName, Def, Min, Max, Save, Desc) ;
 #define MACRO_CONFIG_COL(Name, ScriptName, Def, Save, Desc) ;
 #define MACRO_CONFIG_STR(Name, ScriptName, Len, Def, Save, Desc) ;
@@ -768,3 +767,27 @@ MACRO_CONFIG_INT(ClVideoRecorderFPS, cl_video_recorder_fps, 60, 1, 1000, CFGFLAG
 /*
  * Add config variables for mods below this comment to avoid merge conflicts.
  */
+
+//dmen
+//can change these values in the f1 menu ingame and exec files see binds folder
+MACRO_CONFIG_INT(ClDummyAim, cl_dummy_aim, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "Whether dummy aims at the main tee")
+MACRO_CONFIG_INT(ClDummyLeft, cl_dummy_left, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "Dummy moves left")
+MACRO_CONFIG_INT(ClDummyRight, cl_dummy_right, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "Dummy moves right")
+MACRO_CONFIG_INT(ClCheats, cl_cheats, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "cheats")
+MACRO_CONFIG_INT(ClShoot, cl_shoot1, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, " pew pew")
+MACRO_CONFIG_INT(ClHook, cl_hook, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, " hook")
+
+
+//sleeper
+//doesnt work cs it needs a third clientid and thats to hard and might need server acces 
+MACRO_CONFIG_INT(Clsleeper, cl_sleeper, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, " spawn sleeper")
+MACRO_CONFIG_INT(ClSleeperControl, cl_sleeper_control, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "Whether you can control sleeper")
+MACRO_CONFIG_INT(ClSleeperJump, cl_sleeper_jump, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "Whether sleeper is jumping (requires cl_dummy_control 1)")
+MACRO_CONFIG_INT(ClSleeperFire, cl_sleeper_fire, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "Whether sleeper is firing (requires cl_dummy_control 1)")
+MACRO_CONFIG_INT(ClSleeperHook, cl_sleeper_hook, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "Whether s;eeper is hooking (requires cl_dummy_control 1)")
+MACRO_CONFIG_INT(ClSleeperLeft, cl_sleeper_left, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "sleeper moves left")
+MACRO_CONFIG_INT(ClSleeperRight, cl_sleeper_right, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "sleeper moves right")
+
+//MACRO_CONFIG_INT(ClAfk, cl_afk, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "afk fly")
+
+

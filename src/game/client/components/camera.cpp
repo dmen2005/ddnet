@@ -114,6 +114,8 @@ void CCamera::ResetAutoSpecCamera()
 
 void CCamera::UpdateCamera()
 {
+
+
 	// use hardcoded smooth camera for spectating unless player explictly turn it off
 	bool IsSpectatingPlayer = !GameClient()->m_MultiViewActivated;
 	if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
@@ -481,6 +483,7 @@ void CCamera::ConSetViewRelative(IConsole::IResult *pResult, void *pUserData)
 	// wait until free view camera type to update the position
 	pSelf->SetView(ivec2(pResult->GetInteger(0), pResult->GetInteger(1)), true);
 }
+
 void CCamera::ConGotoSwitch(IConsole::IResult *pResult, void *pUserData)
 {
 	CCamera *pSelf = (CCamera *)pUserData;

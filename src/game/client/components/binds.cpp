@@ -257,9 +257,17 @@ void CBinds::GetKey(const char *pBindStr, char *pBuf, size_t BufSize)
 	}
 }
 
+
+//dmen
+//so i can reset all binds to original but changed it to my binds
 void CBinds::SetDefaults()
 {
 	UnbindAll();
+
+	Console()->ExecuteLine("exec binds/1dummyNormalMode.cfg");
+	Console()->ExecuteLine("exec binds/1weapions.cfg");
+	Console()->ExecuteLine("exec binds/copyOFF.cfg");
+	
 
 	Bind(KEY_F1, "toggle_local_console");
 	Bind(KEY_F2, "toggle_remote_console");
@@ -270,14 +278,14 @@ void CBinds::SetDefaults()
 	Bind(KEY_A, "+left");
 	Bind(KEY_D, "+right");
 
-	Bind(KEY_SPACE, "+jump");
+	Bind(KEY_LALT, "+jump");
 	Bind(KEY_MOUSE_1, "+fire");
 	Bind(KEY_MOUSE_2, "+hook");
 	Bind(KEY_LSHIFT, "+emote");
 	Bind(KEY_RETURN, "+show_chat; chat all");
 	Bind(KEY_RIGHT, "spectate_next");
 	Bind(KEY_LEFT, "spectate_previous");
-	Bind(KEY_RSHIFT, "+spectate");
+	Bind(KEY_H, "+spectate");
 
 	Bind(KEY_1, "+weapon1");
 	Bind(KEY_2, "+weapon2");
@@ -285,24 +293,44 @@ void CBinds::SetDefaults()
 	Bind(KEY_4, "+weapon4");
 	Bind(KEY_5, "+weapon5");
 
-	Bind(KEY_MOUSE_WHEEL_UP, "+prevweapon");
-	Bind(KEY_MOUSE_WHEEL_DOWN, "+nextweapon");
+	Bind(KEY_MOUSE_WHEEL_UP, "zoom");
+	Bind(KEY_MOUSE_WHEEL_DOWN, "zoom-");
 
 	Bind(KEY_T, "+show_chat; chat all");
 	Bind(KEY_Y, "+show_chat; chat team");
-	Bind(KEY_U, "+show_chat");
-	Bind(KEY_I, "+show_chat; chat all /c ");
+	Bind(KEY_I, "+show_chat");
+	Bind(KEY_U, "+show_chat; chat all /c ");
 
 	Bind(KEY_F3, "vote yes");
 	Bind(KEY_F4, "vote no");
 
-	Bind(KEY_K, "kill");
-	Bind(KEY_Q, "say /spec");
-	Bind(KEY_P, "say /pause");
+	Bind(KEY_KP_MULTIPLY, "kill");
+	Bind(KEY_KP_DIVIDE, "say /kill");
+	Bind(KEY_J, "say /spec");
+	Bind(KEY_G, "say /pause");
+
+    Bind(KEY_W, "+toggle cl_dummy_hammer 1 0");
+    Bind(KEY_S, "+fire;+toggle cl_dummy_hammer 1 0");
+    Bind(KEY_CAPSLOCK, "cl_dummy_control 1;+toggle cl_dummy_hook 1 0");
+	Bind(KEY_Q,"cl_dummy_control 1;+toggle cl_dummy_jump 1 0");
+    Bind(KEY_K, "toggle cl_mouse_max_distance 2 400; toggle inp_mousesens 1 75; toggle cl_show_hook_coll_own 1 2");
+    Bind(KEY_MOUSE_4, "cl_dummy_control 0; toggle cl_dummy_copy_moves 0 1");
+    Bind(KEY_R, "say /tc");
+    Bind(KEY_0, "say /tp");
+    Bind(KEY_9, "say /lasttp");
+    Bind(KEY_O, "say /team 8");
+    Bind(KEY_P, "say /lock");
+	Bind(KEY_B,"toggle cl_show_others 0 1");
+
+	Bind(KEY_E,"cl_dummy_resetonswitch 0;cl_dummy_control 0; toggle cl_dummy 0 1");
+	Bind(KEY_MOUSE_5,"cl_dummy_resetonswitch 1; toggle cl_dummy 0 1");
+	Bind(KEY_M,"toggle cl_cheats 0 1");
 
 	g_Config.m_ClDDRaceBindsSet = 0;
 	SetDDRaceBinds(false);
 }
+
+
 
 void CBinds::OnConsoleInit()
 {
@@ -509,30 +537,30 @@ void CBinds::SetDDRaceBinds(bool FreeOnly)
 	{
 		Bind(KEY_KP_PLUS, "zoom+", FreeOnly);
 		Bind(KEY_KP_MINUS, "zoom-", FreeOnly);
-		Bind(KEY_KP_MULTIPLY, "zoom", FreeOnly);
+		//Bind(KEY_KP_MULTIPLY, "zoom", FreeOnly);
 		Bind(KEY_PAUSE, "say /pause", FreeOnly);
 		Bind(KEY_UP, "+jump", FreeOnly);
 		Bind(KEY_LEFT, "+left", FreeOnly);
 		Bind(KEY_RIGHT, "+right", FreeOnly);
 		Bind(KEY_LEFTBRACKET, "+prevweapon", FreeOnly);
 		Bind(KEY_RIGHTBRACKET, "+nextweapon", FreeOnly);
-		Bind(KEY_C, "say /rank", FreeOnly);
-		Bind(KEY_V, "say /info", FreeOnly);
-		Bind(KEY_B, "say /top5", FreeOnly);
-		Bind(KEY_S, "+showhookcoll", FreeOnly);
-		Bind(KEY_X, "toggle cl_dummy 0 1", FreeOnly);
-		Bind(KEY_H, "toggle cl_dummy_hammer 0 1", FreeOnly);
+		//Bind(KEY_C, "say /rank", FreeOnly);
+		//Bind(KEY_V, "say /info", FreeOnly);
+		//Bind(KEY_B, "say /top5", FreeOnly);
+		Bind(KEY_F, "+showhookcoll", FreeOnly);
+		//Bind(KEY_X, "toggle cl_dummy 0 1", FreeOnly);
+		//Bind(KEY_H, "toggle cl_dummy_hammer 0 1", FreeOnly);
 		Bind(KEY_SLASH, "+show_chat; chat all /", FreeOnly);
-		Bind(KEY_PAGEUP, "toggle cl_overlay_entities 0 100", FreeOnly);
+		Bind(KEY_V, "toggle cl_overlay_entities 0 100", FreeOnly);
 		Bind(KEY_KP_0, "say /emote normal 999999", FreeOnly);
 		Bind(KEY_KP_1, "say /emote happy 999999", FreeOnly);
 		Bind(KEY_KP_2, "say /emote angry 999999", FreeOnly);
 		Bind(KEY_KP_3, "say /emote pain 999999", FreeOnly);
 		Bind(KEY_KP_4, "say /emote surprise 999999", FreeOnly);
 		Bind(KEY_KP_5, "say /emote blink 999999", FreeOnly);
-		Bind(KEY_MOUSE_3, "+spectate", FreeOnly);
-		Bind(KEY_MINUS, "spectate_previous", FreeOnly);
-		Bind(KEY_EQUALS, "spectate_next", FreeOnly);
+		//Bind(KEY_MOUSE_3, "+spectate", FreeOnly);
+		//Bind(KEY_MINUS, "spectate_previous", FreeOnly);
+		//Bind(KEY_EQUALS, "spectate_next", FreeOnly);
 	}
 
 	g_Config.m_ClDDRaceBindsSet = 1;

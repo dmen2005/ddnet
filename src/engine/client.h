@@ -121,6 +121,7 @@ public:
 	{
 		CONN_MAIN = 0,
 		CONN_DUMMY,
+		CONN_SLEEPER,
 		CONN_CONTACT,
 		NUM_CONNS,
 	};
@@ -165,8 +166,10 @@ public:
 	virtual void Disconnect() = 0;
 
 	// dummy
+	virtual void SleeperDisconnect(const char *pReason) = 0;
 	virtual void DummyDisconnect(const char *pReason) = 0;
 	virtual void DummyConnect() = 0;
+	virtual void SleeperConnect() = 0;
 	virtual bool DummyConnected() const = 0;
 	virtual bool DummyConnecting() const = 0;
 	virtual bool DummyConnectingDelayed() const = 0;
@@ -269,6 +272,7 @@ public:
 	//
 	virtual const char *PlayerName() const = 0;
 	virtual const char *DummyName() = 0;
+	virtual const char *SleeperName() =0;
 	virtual const char *ErrorString() const = 0;
 	virtual const char *LatestVersion() const = 0;
 	virtual bool ConnectionProblems() const = 0;

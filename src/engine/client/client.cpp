@@ -372,6 +372,44 @@ void CClient::SendInput()
 				Force = true;
 		}
 	}
+
+	if(g_Config.m_ClSleeperControl && DummyConnected())
+{
+	int i = CONN_SLEEPER;
+	int Size = GameClient()->OnSnapInput(m_aInputs[i][m_aCurrentInput[i]].m_aData, i, Force);
+
+	if(Size)
+	{
+		CMsgPacker Msg(NETMSG_INPUT, true);
+		Msg.AddInt(m_aAckGameTick[i]);
+		Msg.AddInt(m_aPredTick[i]);
+		Msg.AddInt(Size);
+
+		m_aInputs[i][m_aCurrentInput[i]].m_Tick = m_aPredTick[i];
+		m_aInputs[i][m_aCurrentInput[i]].m_PredictedTime = m_PredictedTime.Get(Now);
+		m_aInputs[i][m_aCurrentInput[i]].m_PredictionMargin = PredictionMargin() * time_freq() / 1000;
+		m_aInputs[i][m_aCurrentInput[i]].m_Time = Now;
+
+		for(int k = 0; k < Size / 4; k++)
+		{
+			static const int FlagsOffset = offsetof(CNetObj_PlayerInput, m_PlayerFlags) / sizeof(int);
+			if(k == FlagsOffset && IsSixup())
+			{
+				int PlayerFlags = m_aInputs[i][m_aCurrentInput[i]].m_aData[k];
+				Msg.AddInt(PlayerFlags_SixToSeven(PlayerFlags));
+			}
+			else
+			{
+				Msg.AddInt(m_aInputs[i][m_aCurrentInput[i]].m_aData[k]);
+			}
+		}
+
+		m_aCurrentInput[i]++;
+		m_aCurrentInput[i] %= 200;
+
+		SendMsg(i, &Msg, MSGFLAG_FLUSH);
+	}
+}
 }
 
 const char *CClient::LatestVersion() const
@@ -729,6 +767,8 @@ bool CClient::DummyConnectingDelayed() const
 
 void CClient::DummyConnect()
 {
+
+	
 	if(m_aNetClient[CONN_MAIN].State() != NETSTATE_ONLINE)
 	{
 		log_info("client", "Not online.");
@@ -767,10 +807,18 @@ void CClient::DummyConnect()
 
 	m_DummyConnecting = true;
 	// connect to the server
+
 	if(IsSixup())
+	{
 		m_aNetClient[CONN_DUMMY].Connect7(m_aNetClient[CONN_MAIN].ServerAddress(), 1);
+	}
+
 	else
+	{
 		m_aNetClient[CONN_DUMMY].Connect(m_aNetClient[CONN_MAIN].ServerAddress(), 1);
+	}
+
+
 
 	m_aGametimeMarginGraphs[CONN_DUMMY].Init(-150.0f, 150.0f);
 }
@@ -778,6 +826,7 @@ void CClient::DummyConnect()
 void CClient::DummyDisconnect(const char *pReason)
 {
 	m_aNetClient[CONN_DUMMY].Disconnect(pReason);
+
 	g_Config.m_ClDummy = 0;
 
 	m_aRconAuthed[1] = 0;
@@ -789,6 +838,32 @@ void CClient::DummyDisconnect(const char *pReason)
 	m_DummyReconnectOnReload = false;
 	m_DummyDeactivateOnReconnect = false;
 	GameClient()->OnDummyDisconnect();
+}
+
+//dmen
+//connects sleeper
+void CClient::SleeperConnect()
+{
+	m_LastDummyConnectTime = GlobalTime();
+	m_DummySendConnInfo = true;
+	m_DummyConnecting = true;
+	if(IsSixup())
+	{
+		m_aNetClient[CONN_SLEEPER].Connect7(m_aNetClient[CONN_MAIN].ServerAddress(), 1);
+	}
+
+	else
+	{
+		m_aNetClient[CONN_SLEEPER].Connect(m_aNetClient[CONN_MAIN].ServerAddress(), 1);
+	}
+
+	m_aGametimeMarginGraphs[CONN_SLEEPER].Init(-150.0f, 150.0f);
+}
+
+// disconects sleeper
+void CClient::SleeperDisconnect(const char *pReason)
+{
+	m_aNetClient[CONN_SLEEPER].Disconnect(pReason);
 }
 
 bool CClient::DummyAllowed() const
@@ -1043,6 +1118,11 @@ const char *CClient::DummyName()
 		return m_aAutomaticDummyName;
 	}
 	return "brainless tee";
+}
+
+const char *CClient::SleeperName()
+{
+	return "sleeping toy";
 }
 
 const char *CClient::ErrorString() const
@@ -3186,6 +3266,15 @@ void CClient::Run()
 			SendReady(CONN_DUMMY);
 			GameClient()->SendDummyInfo(true);
 			SendEnterGame(CONN_DUMMY);
+
+			if(!g_Config.m_Clsleeper)
+			{
+				SendInfo(CONN_SLEEPER);
+				m_aNetClient[CONN_SLEEPER].Update();
+				SendReady(CONN_SLEEPER);
+				GameClient()->SendDummyInfo(true);
+				SendEnterGame(CONN_SLEEPER);
+			}
 		}
 
 		// update input

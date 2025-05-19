@@ -105,6 +105,25 @@ void CMenus::RenderGame(CUIRect MainView)
 			}
 		}
 	}
+//dmen
+ButtonBar.VSplitRight(5.0f, &ButtonBar, nullptr);
+
+// Sleeper Connect Button
+ButtonBar.VSplitRight(100.0f, &ButtonBar, &Button);
+static CButtonContainer s_SleeperConnectButton;
+if(DoButton_Menu(&s_SleeperConnectButton, Localize("Con Sleeper"), 0, &Button))
+{
+	Client()->SleeperConnect();
+}
+
+ButtonBar.VSplitRight(5.0f, &ButtonBar, nullptr);
+// sleeper disconect butten
+ButtonBar.VSplitRight(100.0f, &ButtonBar, &Button);
+static CButtonContainer s_SleeperDisconnectButton;
+if(DoButton_Menu(&s_SleeperDisconnectButton, Localize("Disc Sleeper"), 0, &Button))
+{
+	Client()->SleeperDisconnect(nullptr);
+}
 
 	ButtonBar.VSplitRight(5.0f, &ButtonBar, nullptr);
 	ButtonBar.VSplitRight(140.0f, &ButtonBar, &Button);

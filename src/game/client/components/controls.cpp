@@ -255,8 +255,8 @@ int CControls::SnapInput(int *pData)
 			pDummyInput->m_WantedWeapon = m_aInputData[g_Config.m_ClDummy].m_WantedWeapon;
 
 			if(!g_Config.m_ClDummyControl)
-				pDummyInput->m_Fire += m_aInputData[g_Config.m_ClDummy].m_Fire - m_aLastData[g_Config.m_ClDummy].m_Fire;
-
+			
+			pDummyInput->m_Fire += m_aInputData[g_Config.m_ClDummy].m_Fire - m_aLastData[g_Config.m_ClDummy].m_Fire;
 			pDummyInput->m_NextWeapon += m_aInputData[g_Config.m_ClDummy].m_NextWeapon - m_aLastData[g_Config.m_ClDummy].m_NextWeapon;
 			pDummyInput->m_PrevWeapon += m_aInputData[g_Config.m_ClDummy].m_PrevWeapon - m_aLastData[g_Config.m_ClDummy].m_PrevWeapon;
 
@@ -266,15 +266,82 @@ int CControls::SnapInput(int *pData)
 		if(g_Config.m_ClDummyControl)
 		{
 			CNetObj_PlayerInput *pDummyInput = &m_pClient->m_DummyInput;
+			
 			pDummyInput->m_Jump = g_Config.m_ClDummyJump;
-
+			
 			if(g_Config.m_ClDummyFire)
-				pDummyInput->m_Fire = g_Config.m_ClDummyFire;
+			pDummyInput->m_Fire = g_Config.m_ClDummyFire;
 			else if((pDummyInput->m_Fire & 1) != 0)
-				pDummyInput->m_Fire++;
-
+			pDummyInput->m_Fire++;
+			
 			pDummyInput->m_Hook = g_Config.m_ClDummyHook;
+			
+			// allows me to move dummy left and right without switching to it
+			if(!g_Config.m_ClDummyCopyMoves && g_Config.m_ClCheats)
+			{
+			pDummyInput->m_Direction = g_Config.m_ClDummyRight - g_Config.m_ClDummyLeft;
 		}
+// dmen
+
+//to make sleeper move but it doesnt have a valid id so it will crash
+
+		// if(g_Config.m_ClSleeperControl)
+		// {
+			
+		// 		CNetObj_PlayerInput *pSleeperInput = &m_pClient->m_SleeperInput;
+							
+		// 		pSleeperInput->m_Jump = g_Config.m_ClSleeperJump;
+			
+		// 		if(g_Config.m_ClSleeperFire)
+		// 		pSleeperInput->m_Fire = g_Config.m_ClSleeperFire;
+		// 		else if((pSleeperInput->m_Fire & 1) != 0)
+		// 		pSleeperInput->m_Fire++;
+				
+		// 		pSleeperInput->m_Hook = g_Config.m_ClSleeperHook;
+			
+		// 		pSleeperInput->m_Direction = g_Config.m_ClSleeperRight - g_Config.m_ClSleeperLeft;
+		// }
+	}
+	
+	//maybe someday
+	//afk hover
+/*if (g_Config.m_clafk) 
+{
+    static float s_HoverTimer = 0.0f;
+    static bool s_ActivePhase = false;
+    const float activeDuration = 0.2f; 
+    const float waitDuration = 0.1f;  
+
+    s_HoverTimer += Client()->RenderFrameTime();
+
+    CNetObj_PlayerInput *pDummyInput = &m_pClient->m_DummyInput;
+    CNetObj_PlayerInput *pLocalInput = &m_aInputData[!g_Config.m_ClDummy];
+
+    if (s_ActivePhase)
+    {
+        pLocalInput->m_Hook = 1; 
+        pDummyInput->m_Fire = 1;
+
+        if (s_HoverTimer >= activeDuration)
+        {
+            s_HoverTimer = 0.0f;
+            s_ActivePhase = false; 
+        }
+    }
+    else
+    {
+        pLocalInput->m_Hook = 0;
+        pDummyInput->m_Fire = 0;
+
+        if (s_HoverTimer >= waitDuration)
+        {
+            s_HoverTimer = 0.0f;
+            s_ActivePhase = true;
+        }
+    }
+}*/
+
+
 
 		// stress testing
 #ifdef CONF_DEBUG

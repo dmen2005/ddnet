@@ -532,7 +532,71 @@ int CGameClient::OnSnapInput(int *pData, bool Dummy, bool Force)
 		{
 			return 0;
 		}
+//dmen
+//makes dummy aim at the main
+		if(g_Config.m_ClDummyAim)
+		{
+			const vec2 Dir = m_LocalCharacterPos - m_aClients[m_aLocalIds[!g_Config.m_ClDummy]].m_Predicted.m_Pos;
+			m_DummyInput.m_TargetX = (int)Dir.x;
+			m_DummyInput.m_TargetY = (int)Dir.y;
+		}
 
+		// makes dummy hook the main at timing to stay afloat
+		if (g_Config.m_ClHook)
+		{
+			if(m_DummyFire % 50 != 0)
+			{
+				m_DummyFire++;
+				return 0;
+			}
+			m_DummyFire++;
+	
+			if (m_Dummyhook == 10) 
+			{
+				m_HammerInput.m_Hook = 0;
+				m_Dummyhook = 0;
+			} 
+			else 
+			{
+				m_HammerInput.m_Hook = 1; 
+				m_Dummyhook++;
+			}
+	
+			const vec2 Dir = m_LocalCharacterPos - m_aClients[m_aLocalIds[!g_Config.m_ClDummy]].m_Predicted.m_Pos;
+			m_HammerInput.m_TargetX = (int)Dir.x;
+			m_HammerInput.m_TargetY = (int)Dir.y;
+					
+			mem_copy(pData, &m_HammerInput, sizeof(m_HammerInput));
+			return sizeof(m_HammerInput);
+		}
+        
+		//makes dummy shoot at me
+		if (g_Config.m_ClShoot)
+		{
+			if(m_DummyFire % 25 != 0)
+			{
+				m_DummyFire++;
+				return 0;
+			}
+			m_DummyFire++;
+	
+			m_HammerInput.m_Fire = (m_HammerInput.m_Fire + 1) | 1;
+			m_HammerInput.m_WantedWeapon = WEAPON_GUN + 1;
+
+
+			if(!g_Config.m_ClDummyRestoreWeapon)
+			{
+				m_DummyInput.m_WantedWeapon = WEAPON_GUN + 1;
+			}
+	
+			const vec2 Dir = m_LocalCharacterPos - m_aClients[m_aLocalIds[!g_Config.m_ClDummy]].m_Predicted.m_Pos;
+			m_HammerInput.m_TargetX = (int)Dir.x;
+			m_HammerInput.m_TargetY = (int)Dir.y;
+			
+			m_HammerInput.m_Hook = 0;
+			mem_copy(pData, &m_HammerInput, sizeof(m_HammerInput));
+			return sizeof(m_HammerInput);
+		}
 		mem_copy(pData, &m_DummyInput, sizeof(m_DummyInput));
 		return sizeof(m_DummyInput);
 	}
@@ -556,6 +620,7 @@ int CGameClient::OnSnapInput(int *pData, bool Dummy, bool Force)
 		m_HammerInput.m_TargetX = (int)Dir.x;
 		m_HammerInput.m_TargetY = (int)Dir.y;
 
+		m_HammerInput.m_Hook = 0;				
 		mem_copy(pData, &m_HammerInput, sizeof(m_HammerInput));
 		return sizeof(m_HammerInput);
 	}
@@ -2162,6 +2227,29 @@ void CGameClient::OnNewSnapshot()
 			Msg.Pack(&Packer);
 			Client()->SendMsg(IClient::CONN_DUMMY, &Packer, MSGFLAG_VITAL);
 		}
+
+		if(!g_Config.m_Clsleeper)
+		{
+			{
+				CNetMsg_Cl_ShowDistance Msg;
+				float x, y;
+				RenderTools()->CalcScreenParams(Graphics()->ScreenAspect(), ShowDistanceZoom, &x, &y);
+				Msg.m_X = x;
+				Msg.m_Y = y;
+				CMsgPacker Packer(&Msg);
+				Msg.Pack(&Packer);
+				Client()->SendMsg(IClient::CONN_SLEEPER, &Packer, MSGFLAG_VITAL);
+			}
+			{
+				CNetMsg_Cl_CameraInfo Msg;
+				Msg.m_Zoom = round_truncate(Zoom * 1000.f);
+				Msg.m_Deadzone = Deadzone;
+				Msg.m_FollowFactor = FollowFactor;
+				CMsgPacker Packer(&Msg);
+				Msg.Pack(&Packer);
+				Client()->SendMsg(IClient::CONN_SLEEPER, &Packer, MSGFLAG_VITAL);
+			}
+		}
 	}
 
 	// send show distance
@@ -2178,7 +2266,16 @@ void CGameClient::OnNewSnapshot()
 
 		Client()->SendMsg(IClient::CONN_MAIN, &Packer, MSGFLAG_VITAL);
 		if(Client()->DummyConnected() && m_LastDummyConnected)
+		{
+
 			Client()->SendMsg(IClient::CONN_DUMMY, &Packer, MSGFLAG_VITAL);
+
+			if(!g_Config.m_Clsleeper)
+				{
+					Client()->SendMsg(IClient::CONN_SLEEPER, &Packer, MSGFLAG_VITAL);
+				}
+
+		}
 	}
 
 	// send camera info
@@ -2194,6 +2291,13 @@ void CGameClient::OnNewSnapshot()
 		Client()->SendMsg(IClient::CONN_MAIN, &Packer, MSGFLAG_VITAL);
 		if(Client()->DummyConnected() && m_LastDummyConnected)
 			Client()->SendMsg(IClient::CONN_DUMMY, &Packer, MSGFLAG_VITAL);
+		{
+			if(!g_Config.m_Clsleeper)
+			{
+				Client()->SendMsg(IClient::CONN_SLEEPER, &Packer, MSGFLAG_VITAL);
+			}
+		}
+
 	}
 
 	m_LastShowDistanceZoom = ShowDistanceZoom;
@@ -2956,6 +3060,37 @@ void CGameClient::SendDummyInfo(bool Start)
 		CMsgPacker Packer(&Msg);
 		Msg.Pack(&Packer);
 		Client()->SendMsg(IClient::CONN_DUMMY, &Packer, MSGFLAG_VITAL);
+		m_aCheckInfo[1] = Client()->GameTickSpeed();
+	}
+
+	if(!g_Config.m_Clsleeper)
+	{
+		CNetMsg_Cl_StartInfo Msg;
+		Msg.m_pName = Client()->SleeperName();
+		Msg.m_pClan = g_Config.m_ClDummyClan;
+		Msg.m_Country = g_Config.m_ClDummyCountry;
+		Msg.m_pSkin = g_Config.m_ClDummySkin;
+		Msg.m_UseCustomColor = g_Config.m_ClDummyUseCustomColor;
+		Msg.m_ColorBody = g_Config.m_ClDummyColorBody;
+		Msg.m_ColorFeet = g_Config.m_ClDummyColorFeet;
+		CMsgPacker Packer(&Msg);
+		Msg.Pack(&Packer);
+		Client()->SendMsg(IClient::CONN_SLEEPER, &Packer, MSGFLAG_VITAL);
+		m_aCheckInfo[1] = -1;
+	}
+	else
+	{
+		CNetMsg_Cl_ChangeInfo Msg;
+		Msg.m_pName = Client()->SleeperName();
+		Msg.m_pClan = g_Config.m_ClDummyClan;
+		Msg.m_Country = g_Config.m_ClDummyCountry;
+		Msg.m_pSkin = g_Config.m_ClDummySkin;
+		Msg.m_UseCustomColor = g_Config.m_ClDummyUseCustomColor;
+		Msg.m_ColorBody = g_Config.m_ClDummyColorBody;
+		Msg.m_ColorFeet = g_Config.m_ClDummyColorFeet;
+		CMsgPacker Packer(&Msg);
+		Msg.Pack(&Packer);
+		Client()->SendMsg(IClient::CONN_SLEEPER, &Packer, MSGFLAG_VITAL);
 		m_aCheckInfo[1] = Client()->GameTickSpeed();
 	}
 }
@@ -4132,7 +4267,7 @@ void CGameClient::LoadExtrasSkin(const char *pPath, bool AsDir)
 	{
 		m_ExtrasSkin.m_SpriteParticleSnowflake = Graphics()->LoadSpriteTexture(ImgInfo, &g_pData->m_aSprites[SPRITE_PART_SNOWFLAKE]);
 		m_ExtrasSkin.m_SpriteParticleSparkle = Graphics()->LoadSpriteTexture(ImgInfo, &g_pData->m_aSprites[SPRITE_PART_SPARKLE]);
-		m_ExtrasSkin.m_SpritePulley = Graphics()->LoadSpriteTexture(ImgInfo, &g_pData->m_aSprites[SPRITE_PART_PULLEY]);
+		m_ExtrasSkin.m_SpritePulley = Graphics()->LoadSpriteTexture(ImgInfo, &g_pData->m_aSprites[SPRITE_PART_HIT01]);
 
 		m_ExtrasSkin.m_aSpriteParticles[0] = m_ExtrasSkin.m_SpriteParticleSnowflake;
 		m_ExtrasSkin.m_aSpriteParticles[1] = m_ExtrasSkin.m_SpriteParticleSparkle;

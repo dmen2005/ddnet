@@ -10,6 +10,7 @@
 #include <engine/textrender.h>
 
 #include <chrono>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -52,7 +53,6 @@ struct SUIAnimator
 class IScrollbarScale
 {
 public:
-	virtual ~IScrollbarScale() = default;
 	virtual float ToRelative(int AbsoluteValue, int Min, int Max) const = 0;
 	virtual int ToAbsolute(float RelativeValue, int Min, int Max) const = 0;
 };
@@ -104,7 +104,6 @@ public:
 class IButtonColorFunction
 {
 public:
-	virtual ~IButtonColorFunction() = default;
 	virtual ColorRGBA GetColor(bool Active, bool Hovered) const = 0;
 };
 class CDarkButtonColorFunction : public IButtonColorFunction
@@ -244,16 +243,16 @@ struct SMenuButtonProperties
 class CUIElementBase
 {
 private:
-	static CUi *ms_pUi;
+	static CUi *s_pUI;
 
 public:
-	static void Init(CUi *pUI) { ms_pUi = pUI; }
+	static void Init(CUi *pUI) { s_pUI = pUI; }
 
 	IClient *Client() const;
 	IGraphics *Graphics() const;
 	IInput *Input() const;
 	ITextRender *TextRender() const;
-	CUi *Ui() const { return ms_pUi; }
+	CUi *Ui() const { return s_pUI; }
 };
 
 class CButtonContainer
@@ -567,9 +566,9 @@ public:
 	void ClipEnable(const CUIRect *pRect);
 	void ClipDisable();
 	const CUIRect *ClipArea() const;
-	bool IsClipped() const { return !m_vClips.empty(); }
+	inline bool IsClipped() const { return !m_vClips.empty(); }
 
-	int DoButtonLogic(const void *pId, int Checked, const CUIRect *pRect, unsigned Flags);
+	int DoButtonLogic(const void *pId, int Checked, const CUIRect *pRect, const unsigned Flags);
 	int DoDraggableButtonLogic(const void *pId, int Checked, const CUIRect *pRect, bool *pClicked, bool *pAbrupted);
 	bool DoDoubleClickLogic(const void *pId);
 	EEditState DoPickerLogic(const void *pId, const CUIRect *pRect, float *pX, float *pY);
